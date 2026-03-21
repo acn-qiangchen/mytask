@@ -98,7 +98,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     const newCount = mode === 'focus' ? sessionCount + 1 : sessionCount;
     if (mode === 'focus') {
       setSessionCount(newCount);
-      if (activeTaskId) incrementTaskPomodoro(activeTaskId);
+      const activeTask = state.tasks.find(t => t.id === activeTaskId);
+      if (activeTaskId && !activeTask?.completed) incrementTaskPomodoro(activeTaskId);
 
       addSession({
         id: randomId(),
@@ -182,7 +183,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     if (mode === 'focus') {
       const newCount = sessionCount + 1;
       setSessionCount(newCount);
-      if (activeTaskId) incrementTaskPomodoro(activeTaskId);
+      const activeTask = state.tasks.find(t => t.id === activeTaskId);
+      if (activeTaskId && !activeTask?.completed) incrementTaskPomodoro(activeTaskId);
 
       addSession({
         id: randomId(),
