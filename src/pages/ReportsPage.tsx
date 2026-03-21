@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -9,6 +9,8 @@ import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes, format
 export function ReportsPage() {
   const { state } = useApp();
   const { t } = useLang();
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const today = todayStr();
   const focusSessions = state.sessions.filter(s => s.type === 'focus' && s.completed);
@@ -54,6 +56,14 @@ export function ReportsPage() {
         return bTime.localeCompare(aTime);
       });
   }, [state.tasks]);
+
+  const filteredHistory = useMemo(() => {
+    return taskHistory.filter(task => {
+      if (fromDate && task.date < fromDate) return false;
+      if (toDate && task.date > toDate) return false;
+      return true;
+    });
+  }, [taskHistory, fromDate, toDate]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -115,15 +125,39 @@ export function ReportsPage() {
           </>
         )}
         {/* Task history */}
-        <div className="bg-gray-800 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+        <div className="bg-gray-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
             {t.reports.taskHistory}
           </h2>
-          {taskHistory.length === 0 ? (
+          <div className="flex items-center gap-3 text-sm">
+            <label className="text-gray-400 shrink-0">{t.reports.from}</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={e => setFromDate(e.target.value)}
+              className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
+            />
+            <label className="text-gray-400 shrink-0">{t.reports.to}</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={e => setToDate(e.target.value)}
+              className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
+            />
+            {(fromDate || toDate) && (
+              <button
+                onClick={() => { setFromDate(''); setToDate(''); }}
+                className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {filteredHistory.length === 0 ? (
             <p className="text-gray-500 text-sm text-center py-4">{t.reports.noTaskHistory}</p>
           ) : (
             <div className="space-y-3">
-              {taskHistory.map(task => (
+              {filteredHistory.map(task => (
                 <div key={task.id} className="border-l-2 border-red-500/40 pl-3 space-y-1">
                   <div className="flex items-start justify-between gap-2">
                     <span className={`text-sm text-white ${task.archivedAt ? 'opacity-50' : ''}`}>

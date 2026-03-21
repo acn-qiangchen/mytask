@@ -63,6 +63,8 @@ const en = {
     historyStarted: 'Started',
     historyCompleted: 'Completed',
     historyPomodoros: 'Pomodoros',
+    from: 'From',
+    to: 'To',
   },
   settings: {
     title: 'Settings',
@@ -155,6 +157,8 @@ const ja: typeof en = {
     historyStarted: '開始',
     historyCompleted: '完了',
     historyPomodoros: 'ポモドーロ',
+    from: '開始日',
+    to: '終了日',
   },
   settings: {
     title: '設定',

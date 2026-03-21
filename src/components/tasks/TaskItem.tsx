@@ -69,10 +69,10 @@ export function TaskItem({ task, isActive, onSelect }: Props) {
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer group transition-colors ${
-        isActive ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'
-      } ${task.completed ? 'opacity-50' : ''}`}
-      onClick={() => onSelect(task.id)}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 group transition-colors ${
+        task.completed ? 'cursor-default opacity-50' : 'cursor-pointer'
+      } ${isActive ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+      onClick={() => { if (!task.completed) onSelect(task.id); }}
     >
       <button
         onClick={e => { e.stopPropagation(); toggleComplete(); }}

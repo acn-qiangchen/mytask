@@ -192,8 +192,15 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
       const nextMode: TimerMode =
         newCount % settings.longBreakInterval === 0 ? 'long_break' : 'short_break';
+      const nextSecs = durationFor(nextMode);
       setModeState(nextMode);
-      setSecondsLeft(durationFor(nextMode));
+      setSecondsLeft(nextSecs);
+
+      if (settings.autoStartBreaks) {
+        startTimeRef.current = new Date().toISOString();
+        startTicking(Date.now() + nextSecs * 1000);
+        setRunning(true);
+      }
     } else {
       addSession({
         id: randomId(),
@@ -208,8 +215,14 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const focusSecs = durationFor('focus');
       setModeState('focus');
       setSecondsLeft(focusSecs);
+
+      if (settings.autoStartPomodoros) {
+        startTimeRef.current = new Date().toISOString();
+        startTicking(Date.now() + focusSecs * 1000);
+        setRunning(true);
+      }
     }
-  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor]);
+  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     clearTimer();

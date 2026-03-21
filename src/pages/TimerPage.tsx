@@ -50,6 +50,8 @@ export function TimerPage() {
   }
 
   function handleSwitchTask(taskId: string) {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (task?.completed) return; // completed tasks cannot be focused
     if (taskId === timer.activeTaskId) {
       // While running, ignore deselect clicks — use Pause to stop the timer first
       if (!timer.running) timer.switchTask(null);
