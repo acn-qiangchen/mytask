@@ -28,6 +28,7 @@ export interface Settings {
   longBreakInterval: number;
   autoStartBreaks: boolean;
   autoStartPomodoros: boolean;
+  soundEnabled: boolean;
 }
 
 export interface AppState {

@@ -42,6 +42,12 @@ export function SettingsPage() {
           <ToggleField label={t.settings.autoStartPomodoros} value={form.autoStartPomodoros} onChange={v => handleChange('autoStartPomodoros', v)} />
         </section>
 
+        {/* Sound */}
+        <section className="bg-gray-800 rounded-xl p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">{t.settings.soundTitle}</h2>
+          <ToggleField label={t.settings.soundEnabled} value={form.soundEnabled} onChange={v => handleChange('soundEnabled', v)} />
+        </section>
+
         {/* Language */}
         <section className="bg-gray-800 rounded-xl p-5 space-y-3">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">{t.settings.languageTitle}</h2>
