@@ -7,9 +7,14 @@ interface Props {
   task: Task;
   isActive: boolean;
   onSelect: (id: string) => void;
+  // Inline timer controls — only provided when this task is active and timer is running
+  timerRunning?: boolean;
+  onPause?: () => void;
+  onForceComplete?: () => void;
+  onReset?: () => void;
 }
 
-export function TaskItem({ task, isActive, onSelect }: Props) {
+export function TaskItem({ task, isActive, onSelect, timerRunning, onPause, onForceComplete, onReset }: Props) {
   const { updateTask, deleteTask } = useApp();
   const { t } = useLang();
   const [editing, setEditing] = useState(false);
@@ -62,6 +67,8 @@ export function TaskItem({ task, isActive, onSelect }: Props) {
     );
   }
 
+  const showTimerControls = isActive && timerRunning;
+
   return (
     <div
       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer group transition-colors ${
@@ -91,24 +98,57 @@ export function TaskItem({ task, isActive, onSelect }: Props) {
         <span>{task.completedPomodoros}/{task.estimatedPomodoros}</span>
       </div>
 
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={e => { e.stopPropagation(); setEditing(true); setEditTitle(task.title); setEditPomodoros(task.estimatedPomodoros); }}
-          className="p-1 text-white/40 hover:text-white rounded"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-        </button>
-        <button
-          onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
-          className="p-1 text-white/40 hover:text-red-400 rounded"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
-      </div>
+      {/* Inline timer controls when this task is active and running */}
+      {showTimerControls ? (
+        <div className="flex gap-1">
+          <button
+            onClick={e => { e.stopPropagation(); onPause?.(); }}
+            title={t.timer.pause}
+            className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onForceComplete?.(); }}
+            title={t.timer.forceComplete}
+            className="p-1.5 text-green-400 hover:text-green-300 hover:bg-white/10 rounded transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); onReset?.(); }}
+            title={t.timer.reset}
+            className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={e => { e.stopPropagation(); setEditing(true); setEditTitle(task.title); setEditPomodoros(task.estimatedPomodoros); }}
+            className="p-1 text-white/40 hover:text-white rounded"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
+            className="p-1 text-white/40 hover:text-red-400 rounded"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

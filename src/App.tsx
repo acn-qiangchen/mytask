@@ -4,6 +4,7 @@ import '@aws-amplify/ui-react/styles.css';
 import './aws-config';
 import { AppProvider } from './context/AppContext';
 import { LangProvider } from './context/LangContext';
+import { TimerProvider } from './context/TimerContext';
 import { TopBar } from './components/layout/TopBar';
 import { TimerPage } from './pages/TimerPage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -15,6 +16,7 @@ export default function App() {
       <Authenticator>
         {() => (
           <AppProvider>
+            <TimerProvider>
             <HashRouter>
               <div className="flex flex-col min-h-screen">
                 <TopBar />
@@ -27,6 +29,7 @@ export default function App() {
                 </main>
               </div>
             </HashRouter>
+            </TimerProvider>
           </AppProvider>
         )}
       </Authenticator>
