@@ -96,7 +96,7 @@ export function TaskItem({ task, isActive, onSelect }: Props) {
         <span>{task.completedPomodoros}/{task.estimatedPomodoros}</span>
       </div>
 
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-1">
         <button
           onClick={e => { e.stopPropagation(); setEditing(true); setEditTitle(task.title); setEditPomodoros(task.estimatedPomodoros); }}
           className="p-1 text-white/40 hover:text-white rounded"

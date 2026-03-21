@@ -60,3 +60,10 @@ Tasks are per-day: `state.tasks.filter(t => t.date === todayStr())`. There is no
 ### Routing
 
 HashRouter with three routes: `/` (TimerPage), `/reports` (ReportsPage), `/settings` (SettingsPage). HashRouter is used for GitHub Pages compatibility (no server-side routing needed).
+
+## UI / UX constraints
+
+The app targets **mobile as a primary use case** alongside desktop. Key implications:
+- Never use hover-only interactions (`opacity-0 group-hover:opacity-100`) for actionable controls — touch devices have no hover state. Buttons and action icons must always be visible.
+- Prefer tap-friendly target sizes (minimum ~40px hit area).
+- Avoid tooltips as the sole affordance for an action.
