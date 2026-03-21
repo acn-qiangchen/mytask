@@ -73,7 +73,7 @@ export function TimerPage() {
                   key={task.id}
                   task={task}
                   isActive={timer.activeTaskId === task.id}
-                  onSelect={id => timer.setActiveTaskId(id === timer.activeTaskId ? null : id)}
+                  onSelect={id => timer.switchTask(id === timer.activeTaskId ? null : id)}
                 />
               ))}
             </div>

@@ -27,13 +27,17 @@ export function useTimer() {
 
   const startTimeRef = useRef<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const runningRef = useRef(false);
+  runningRef.current = running;
 
-  // When settings change, reset timer to new duration (only if not running)
+  // When settings or mode change, reset timer duration — but only if not currently running.
+  // runningRef avoids adding `running` to deps (which would fire on every pause and reset the timer).
   useEffect(() => {
-    if (!running) {
+    if (!runningRef.current) {
       setSecondsLeft(durationFor(mode));
     }
-  }, [settings, mode, running, durationFor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings, mode, durationFor]);
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -125,11 +129,21 @@ export function useTimer() {
   }, [clearTimer, durationFor, mode]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
+    if (runningRef.current) {
+      if (!window.confirm('Timer is running. Switch mode and lose current session progress?')) return;
+    }
     clearTimer();
     setRunning(false);
     setModeState(newMode);
     setSecondsLeft(durationFor(newMode));
   }, [clearTimer, durationFor]);
+
+  const switchTask = useCallback((taskId: string | null) => {
+    if (runningRef.current && taskId !== null) {
+      if (!window.confirm('Timer is running. Switch to this task?')) return;
+    }
+    setActiveTaskId(taskId);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => () => clearTimer(), [clearTimer]);
@@ -147,7 +161,7 @@ export function useTimer() {
     progress,
     sessionCount,
     activeTaskId,
-    setActiveTaskId,
+    switchTask,
     start,
     pause,
     reset,
