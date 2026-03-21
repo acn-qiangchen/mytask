@@ -10,7 +10,6 @@ import { TaskItem } from '../components/tasks/TaskItem';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { todayStr } from '../utils/formatters';
 import type { TimerMode } from '../hooks/useTimer';
-import type { Task } from '../types';
 
 const BG_COLORS: Record<string, string> = {
   focus: 'from-red-700 to-red-900',
@@ -30,12 +29,11 @@ export function TimerPage() {
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   const today = todayStr();
-  const rawTodayTasks = state.tasks.filter((task: Task) => task.date === today);
-  const todayTasks = [
-    ...rawTodayTasks.filter((t: Task) => !t.completed),
-    ...rawTodayTasks.filter((t: Task) => t.completed),
-  ];
-  const hasCompleted = rawTodayTasks.some((t: Task) => t.completed);
+  const todayTasks = state.tasks
+    .filter(task => task.date === today && !task.archivedAt)
+    .sort((a, b) => Number(a.completed) - Number(b.completed));
+  const hasCompleted = todayTasks.some(t => t.completed);
+  const needsTaskHint = timer.mode === 'focus' && !timer.activeTaskId && !timer.running;
   const todaySessions = state.sessions.filter(s => s.date === today && s.type === 'focus' && s.completed);
   const bgGradient = BG_COLORS[timer.mode] ?? BG_COLORS.focus;
 
@@ -78,11 +76,15 @@ export function TimerPage() {
           <TimerControls
             running={timer.running}
             hasActiveTask={timer.activeTaskId !== null}
+            mode={timer.mode}
             onStart={timer.start}
             onPause={timer.pause}
             onReset={timer.reset}
             onForceComplete={timer.forceComplete}
           />
+          {needsTaskHint && (
+            <p className="text-white/50 text-xs">{t.timer.selectTask}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-3 text-white/60 text-sm">

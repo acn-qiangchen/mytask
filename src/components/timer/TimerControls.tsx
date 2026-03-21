@@ -3,14 +3,16 @@ import { useLang } from '../../hooks/useLang';
 interface Props {
   running: boolean;
   hasActiveTask: boolean;
+  mode: string;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
   onForceComplete: () => void;
 }
 
-export function TimerControls({ running, hasActiveTask, onStart, onPause, onReset, onForceComplete }: Props) {
+export function TimerControls({ running, hasActiveTask, mode, onStart, onPause, onReset, onForceComplete }: Props) {
   const { t } = useLang();
+  const startDisabled = !running && mode === 'focus' && !hasActiveTask;
 
   return (
     <div className="flex items-center gap-3">
@@ -26,7 +28,8 @@ export function TimerControls({ running, hasActiveTask, onStart, onPause, onRese
 
       <button
         onClick={running ? onPause : onStart}
-        className="px-10 py-3 bg-white text-gray-800 rounded-full font-bold text-lg shadow-lg hover:bg-gray-100 active:scale-95 transition-all"
+        disabled={startDisabled}
+        className="px-10 py-3 bg-white text-gray-800 rounded-full font-bold text-lg shadow-lg hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
       >
         {running ? t.timer.pause : t.timer.start}
       </button>

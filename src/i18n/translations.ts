@@ -58,6 +58,11 @@ const en = {
     noData: 'No data yet. Complete some focus sessions!',
     barLabel: 'Focus (min)',
     daily: 'Daily Focus',
+    taskHistory: 'Task History',
+    noTaskHistory: 'No completed tasks yet.',
+    historyStarted: 'Started',
+    historyCompleted: 'Completed',
+    historyPomodoros: 'Pomodoros',
   },
   settings: {
     title: 'Settings',
@@ -145,6 +150,11 @@ const ja: typeof en = {
     noData: 'データがまだありません。集中セッションを完了させましょう！',
     barLabel: '集中（分）',
     daily: '日別集中時間',
+    taskHistory: 'タスク履歴',
+    noTaskHistory: '完了したタスクはまだありません。',
+    historyStarted: '開始',
+    historyCompleted: '完了',
+    historyPomodoros: 'ポモドーロ',
   },
   settings: {
     title: '設定',

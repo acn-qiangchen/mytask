@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
-import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes } from '../utils/formatters';
+import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes, formatDateTime } from '../utils/formatters';
 
 export function ReportsPage() {
   const { state } = useApp();
@@ -44,6 +44,16 @@ export function ReportsPage() {
   }, [focusSessions]);
 
   const hasData = focusSessions.length > 0;
+
+  const taskHistory = useMemo(() => {
+    return state.tasks
+      .filter(task => task.completed || task.archivedAt)
+      .sort((a, b) => {
+        const aTime = a.archivedAt ?? a.completedAt ?? a.createdAt;
+        const bTime = b.archivedAt ?? b.completedAt ?? b.createdAt;
+        return bTime.localeCompare(aTime);
+      });
+  }, [state.tasks]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -104,6 +114,37 @@ export function ReportsPage() {
             </div>
           </>
         )}
+        {/* Task history */}
+        <div className="bg-gray-800 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            {t.reports.taskHistory}
+          </h2>
+          {taskHistory.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">{t.reports.noTaskHistory}</p>
+          ) : (
+            <div className="space-y-3">
+              {taskHistory.map(task => (
+                <div key={task.id} className="border-l-2 border-red-500/40 pl-3 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`text-sm text-white ${task.archivedAt ? 'opacity-50' : ''}`}>
+                      {task.title}
+                    </span>
+                    <span className="text-xs text-red-400 shrink-0">
+                      🍅 {task.completedPomodoros}/{task.estimatedPomodoros}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
+                    <span>{t.reports.historyStarted}: {formatDateTime(task.createdAt)}</span>
+                    {(task.completedAt ?? task.archivedAt) && (
+                      <span>{t.reports.historyCompleted}: {formatDateTime((task.completedAt ?? task.archivedAt)!)}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

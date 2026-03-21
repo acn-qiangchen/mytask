@@ -150,10 +150,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   const start = useCallback(() => {
     if (runningRef.current) return;
+    if (mode === 'focus' && !activeTaskId) return; // require a task for focus sessions
     startTimeRef.current = new Date().toISOString();
     startTicking(Date.now() + secondsLeftRef.current * 1000);
     setRunning(true);
-  }, [startTicking]);
+  }, [startTicking, mode, activeTaskId]);
 
   const pause = useCallback(() => {
     clearTimer();

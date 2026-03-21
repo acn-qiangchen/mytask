@@ -29,7 +29,14 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, tasks: state.tasks.filter(t => t.id !== action.payload) };
 
     case 'CLEAR_COMPLETED_TASKS':
-      return { ...state, tasks: state.tasks.filter(t => !(t.date === action.payload && t.completed)) };
+      return {
+        ...state,
+        tasks: state.tasks.map(t =>
+          t.date === action.payload && t.completed && !t.archivedAt
+            ? { ...t, archivedAt: new Date().toISOString() }
+            : t
+        ),
+      };
 
     case 'ADD_SESSION':
       return { ...state, sessions: [...state.sessions, action.payload] };

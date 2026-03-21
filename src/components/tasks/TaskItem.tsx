@@ -24,7 +24,12 @@ export function TaskItem({ task, isActive, onSelect }: Props) {
   }
 
   function toggleComplete() {
-    updateTask({ ...task, completed: !task.completed });
+    const nowCompleted = !task.completed;
+    updateTask({
+      ...task,
+      completed: nowCompleted,
+      completedAt: nowCompleted ? new Date().toISOString() : undefined,
+    });
   }
 
   if (confirmDelete) {
