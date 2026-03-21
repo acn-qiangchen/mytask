@@ -61,6 +61,12 @@ Tasks are per-day: `state.tasks.filter(t => t.date === todayStr())`. There is no
 
 HashRouter with three routes: `/` (TimerPage), `/reports` (ReportsPage), `/settings` (SettingsPage). HashRouter is used for GitHub Pages compatibility (no server-side routing needed).
 
+## Git workflow
+
+- Always work on a dedicated branch — never commit directly to `main` or `master`.
+- Branch names must include the GitHub issue number: `feature/issue-<N>-<short-description>` or `fix/issue-<N>-<short-description>`.
+- After pushing the branch, open a PR targeting `main`.
+
 ## UI / UX constraints
 
 The app targets **mobile as a primary use case** alongside desktop. Key implications:
