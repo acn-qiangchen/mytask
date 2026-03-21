@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTimer } from '../hooks/useTimer';
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
@@ -27,6 +27,16 @@ export function TimerPage() {
   const { state, clearCompletedTasks } = useApp();
   const { t } = useLang();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+
+  // Pause and deselect if the active task is marked complete while timer is running
+  useEffect(() => {
+    if (!timer.activeTaskId || !timer.running) return;
+    const activeTask = state.tasks.find(t => t.id === timer.activeTaskId);
+    if (activeTask?.completed) {
+      timer.pause();
+      timer.switchTask(null);
+    }
+  }, [state.tasks, timer.activeTaskId, timer.running]);
 
   const today = todayStr();
   const todayTasks = state.tasks
