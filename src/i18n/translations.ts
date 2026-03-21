@@ -44,6 +44,7 @@ const en = {
     btnCancel: 'Cancel',
     errTitle: 'Title is required',
     errPomodoros: 'Enter a positive number',
+    clearCompleted: 'Clear completed',
   },
   reports: {
     title: 'Reports',
@@ -130,6 +131,7 @@ const ja: typeof en = {
     btnCancel: 'キャンセル',
     errTitle: 'タイトルは必須です',
     errPomodoros: '正の数を入力してください',
+    clearCompleted: '完了済みを削除',
   },
   reports: {
     title: 'レポート',

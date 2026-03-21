@@ -10,6 +10,7 @@ import { TaskItem } from '../components/tasks/TaskItem';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { todayStr } from '../utils/formatters';
 import type { TimerMode } from '../hooks/useTimer';
+import type { Task } from '../types';
 
 const BG_COLORS: Record<string, string> = {
   focus: 'from-red-700 to-red-900',
@@ -24,12 +25,17 @@ interface PendingConfirm {
 
 export function TimerPage() {
   const timer = useTimer();
-  const { state } = useApp();
+  const { state, clearCompletedTasks } = useApp();
   const { t } = useLang();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   const today = todayStr();
-  const todayTasks = state.tasks.filter(task => task.date === today);
+  const rawTodayTasks = state.tasks.filter((task: Task) => task.date === today);
+  const todayTasks = [
+    ...rawTodayTasks.filter((t: Task) => !t.completed),
+    ...rawTodayTasks.filter((t: Task) => t.completed),
+  ];
+  const hasCompleted = rawTodayTasks.some((t: Task) => t.completed);
   const todaySessions = state.sessions.filter(s => s.date === today && s.type === 'focus' && s.completed);
   const bgGradient = BG_COLORS[timer.mode] ?? BG_COLORS.focus;
 
@@ -71,9 +77,11 @@ export function TimerPage() {
           <TimerDisplay display={timer.display} progress={timer.progress} mode={timer.mode} />
           <TimerControls
             running={timer.running}
+            hasActiveTask={timer.activeTaskId !== null}
             onStart={timer.start}
             onPause={timer.pause}
             onReset={timer.reset}
+            onForceComplete={timer.forceComplete}
           />
         </div>
 
@@ -92,7 +100,17 @@ export function TimerPage() {
         })()}
 
         <div className="w-full space-y-3">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-wider opacity-70">{t.tasks.title}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-semibold text-sm uppercase tracking-wider opacity-70">{t.tasks.title}</h2>
+            {hasCompleted && (
+              <button
+                onClick={() => clearCompletedTasks(today)}
+                className="text-white/40 hover:text-white/70 text-xs transition-colors"
+              >
+                {t.tasks.clearCompleted}
+              </button>
+            )}
+          </div>
           <AddTaskForm />
           {todayTasks.length === 0 ? (
             <p className="text-white/40 text-sm text-center py-4">{t.tasks.noTasks}</p>
@@ -104,10 +122,6 @@ export function TimerPage() {
                   task={task}
                   isActive={timer.activeTaskId === task.id}
                   onSelect={handleSwitchTask}
-                  timerRunning={timer.running}
-                  onPause={timer.activeTaskId === task.id ? timer.pause : undefined}
-                  onForceComplete={timer.activeTaskId === task.id ? timer.forceComplete : undefined}
-                  onReset={timer.activeTaskId === task.id ? timer.reset : undefined}
                 />
               ))}
             </div>

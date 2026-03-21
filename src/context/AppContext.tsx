@@ -10,6 +10,7 @@ interface AppContextValue {
   addTask: (t: Task) => void;
   updateTask: (t: Task) => void;
   deleteTask: (id: string) => void;
+  clearCompletedTasks: (date: string) => void;
   addSession: (s: Session) => void;
   incrementTaskPomodoro: (taskId: string) => void;
   updateSettings: (s: Settings) => void;
@@ -65,6 +66,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTask: (t) => dispatch({ type: 'ADD_TASK', payload: t }),
     updateTask: (t) => dispatch({ type: 'UPDATE_TASK', payload: t }),
     deleteTask: (id) => dispatch({ type: 'DELETE_TASK', payload: id }),
+    clearCompletedTasks: (date) => dispatch({ type: 'CLEAR_COMPLETED_TASKS', payload: date }),
     addSession: (s) => dispatch({ type: 'ADD_SESSION', payload: s }),
     incrementTaskPomodoro: (taskId) => dispatch({ type: 'INCREMENT_TASK_POMODORO', payload: taskId }),
     updateSettings: (s) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }),
