@@ -90,6 +90,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }, 500);
   }, []);
 
+  const autoStart = useCallback((secs: number, enabled: boolean) => {
+    if (!enabled) return;
+    startTimeRef.current = new Date().toISOString();
+    startTicking(Date.now() + secs * 1000);
+    setRunning(true);
+  }, [startTicking]);
+
   const onSessionComplete = useCallback(() => {
     clearTimer();
     setRunning(false);
@@ -115,11 +122,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const nextSecs = durationFor(nextMode);
       setSecondsLeft(nextSecs);
 
-      if (settings.autoStartBreaks) {
-        startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + nextSecs * 1000);
-        setRunning(true);
-      }
+      autoStart(nextSecs, settings.autoStartBreaks);
     } else {
       addSession({
         id: randomId(),
@@ -134,14 +137,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const focusSecs = durationFor('focus');
       setModeState('focus');
       setSecondsLeft(focusSecs);
-
-      if (settings.autoStartPomodoros) {
-        startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + focusSecs * 1000);
-        setRunning(true);
-      }
+      autoStart(focusSecs, settings.autoStartPomodoros);
     }
-  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking]);
+  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, autoStart]);
 
   useEffect(() => {
     if (!running) return;
@@ -196,11 +194,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       setModeState(nextMode);
       setSecondsLeft(nextSecs);
 
-      if (settings.autoStartBreaks) {
-        startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + nextSecs * 1000);
-        setRunning(true);
-      }
+      autoStart(nextSecs, settings.autoStartBreaks);
     } else {
       addSession({
         id: randomId(),
@@ -215,14 +209,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       const focusSecs = durationFor('focus');
       setModeState('focus');
       setSecondsLeft(focusSecs);
-
-      if (settings.autoStartPomodoros) {
-        startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + focusSecs * 1000);
-        setRunning(true);
-      }
+      autoStart(focusSecs, settings.autoStartPomodoros);
     }
-  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking]);
+  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, autoStart]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     clearTimer();
