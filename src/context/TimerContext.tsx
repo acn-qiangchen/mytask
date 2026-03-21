@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import type { Session } from '../types';
 import { useApp } from '../hooks/useApp';
 import { todayStr } from '../utils/formatters';
+import { playModeSound } from '../utils/sounds';
 
 export type TimerMode = 'focus' | 'short_break' | 'long_break';
 
@@ -116,6 +117,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       setSecondsLeft(nextSecs);
 
       if (settings.autoStartBreaks) {
+        playModeSound(nextMode, settings.soundEnabled);
         startTimeRef.current = new Date().toISOString();
         startTicking(Date.now() + nextSecs * 1000);
         setRunning(true);
@@ -136,6 +138,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       setSecondsLeft(focusSecs);
 
       if (settings.autoStartPomodoros) {
+        playModeSound('focus', settings.soundEnabled);
         startTimeRef.current = new Date().toISOString();
         startTicking(Date.now() + focusSecs * 1000);
         setRunning(true);
@@ -151,10 +154,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const start = useCallback(() => {
     if (runningRef.current) return;
     if (mode === 'focus' && !activeTaskId) return; // require a task for focus sessions
+    playModeSound(mode, settings.soundEnabled);
     startTimeRef.current = new Date().toISOString();
     startTicking(Date.now() + secondsLeftRef.current * 1000);
     setRunning(true);
-  }, [startTicking, mode, activeTaskId]);
+  }, [startTicking, mode, activeTaskId, settings.soundEnabled]);
 
   const pause = useCallback(() => {
     clearTimer();
@@ -217,6 +221,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       setSecondsLeft(focusSecs);
 
       if (settings.autoStartPomodoros) {
+        playModeSound('focus', settings.soundEnabled);
         startTimeRef.current = new Date().toISOString();
         startTicking(Date.now() + focusSecs * 1000);
         setRunning(true);

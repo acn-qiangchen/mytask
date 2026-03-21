@@ -7,4 +7,5 @@ export const DEFAULT_SETTINGS: Settings = {
   longBreakInterval: 4,
   autoStartBreaks: false,
   autoStartPomodoros: false,
+  soundEnabled: true,
 };
