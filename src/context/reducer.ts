@@ -5,6 +5,7 @@ export type Action =
   | { type: 'ADD_TASK'; payload: Task }
   | { type: 'UPDATE_TASK'; payload: Task }
   | { type: 'DELETE_TASK'; payload: string }
+  | { type: 'CLEAR_COMPLETED_TASKS'; payload: string }  // payload = date string
   | { type: 'ADD_SESSION'; payload: Session }
   | { type: 'INCREMENT_TASK_POMODORO'; payload: string }
   | { type: 'UPDATE_SETTINGS'; payload: Settings }
@@ -26,6 +27,16 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case 'DELETE_TASK':
       return { ...state, tasks: state.tasks.filter(t => t.id !== action.payload) };
+
+    case 'CLEAR_COMPLETED_TASKS':
+      return {
+        ...state,
+        tasks: state.tasks.map(t =>
+          t.date === action.payload && t.completed && !t.archivedAt
+            ? { ...t, archivedAt: new Date().toISOString() }
+            : t
+        ),
+      };
 
     case 'ADD_SESSION':
       return { ...state, sessions: [...state.sessions, action.payload] };

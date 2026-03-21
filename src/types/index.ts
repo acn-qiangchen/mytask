@@ -7,6 +7,8 @@ export interface Task {
   completed: boolean;
   note?: string;
   createdAt: string;
+  completedAt?: string;  // ISO timestamp — set when task is marked complete
+  archivedAt?: string;   // ISO timestamp — set when task is cleared from the day view
 }
 
 export interface Session {

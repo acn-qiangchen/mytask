@@ -21,6 +21,9 @@ const en = {
     noTaskSelected: 'No task selected',
     selectTask: 'Select a task to focus on',
     pomodorosToday: (n: number) => `${n} pomodoro${n !== 1 ? 's' : ''} today`,
+    forceComplete: 'Done',
+    confirmSwitchMode: 'Timer is running. Switch mode and lose current session progress?',
+    confirmSwitchTask: 'Timer is running. Switch to this task?',
   },
   tasks: {
     title: 'Tasks',
@@ -41,6 +44,7 @@ const en = {
     btnCancel: 'Cancel',
     errTitle: 'Title is required',
     errPomodoros: 'Enter a positive number',
+    clearCompleted: 'Clear completed',
   },
   reports: {
     title: 'Reports',
@@ -54,6 +58,13 @@ const en = {
     noData: 'No data yet. Complete some focus sessions!',
     barLabel: 'Focus (min)',
     daily: 'Daily Focus',
+    taskHistory: 'Task History',
+    noTaskHistory: 'No completed tasks yet.',
+    historyStarted: 'Started',
+    historyCompleted: 'Completed',
+    historyPomodoros: 'Pomodoros',
+    from: 'From',
+    to: 'To',
   },
   settings: {
     title: 'Settings',
@@ -104,6 +115,9 @@ const ja: typeof en = {
     noTaskSelected: 'タスク未選択',
     selectTask: '集中するタスクを選択してください',
     pomodorosToday: (n: number) => `今日${n}ポモドーロ`,
+    forceComplete: '完了',
+    confirmSwitchMode: 'タイマーが動作中です。モードを切り替えて現在のセッションを破棄しますか？',
+    confirmSwitchTask: 'タイマーが動作中です。このタスクに切り替えますか？',
   },
   tasks: {
     title: 'タスク',
@@ -124,6 +138,7 @@ const ja: typeof en = {
     btnCancel: 'キャンセル',
     errTitle: 'タイトルは必須です',
     errPomodoros: '正の数を入力してください',
+    clearCompleted: '完了済みを削除',
   },
   reports: {
     title: 'レポート',
@@ -137,6 +152,13 @@ const ja: typeof en = {
     noData: 'データがまだありません。集中セッションを完了させましょう！',
     barLabel: '集中（分）',
     daily: '日別集中時間',
+    taskHistory: 'タスク履歴',
+    noTaskHistory: '完了したタスクはまだありません。',
+    historyStarted: '開始',
+    historyCompleted: '完了',
+    historyPomodoros: 'ポモドーロ',
+    from: '開始日',
+    to: '終了日',
   },
   settings: {
     title: '設定',

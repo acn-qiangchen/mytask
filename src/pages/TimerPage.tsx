@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTimer } from '../hooks/useTimer';
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
@@ -6,7 +7,9 @@ import { TimerDisplay } from '../components/timer/TimerDisplay';
 import { TimerControls } from '../components/timer/TimerControls';
 import { AddTaskForm } from '../components/tasks/AddTaskForm';
 import { TaskItem } from '../components/tasks/TaskItem';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { todayStr } from '../utils/formatters';
+import type { TimerMode } from '../hooks/useTimer';
 
 const BG_COLORS: Record<string, string> = {
   focus: 'from-red-700 to-red-900',
@@ -14,43 +17,83 @@ const BG_COLORS: Record<string, string> = {
   long_break: 'from-blue-700 to-blue-900',
 };
 
+interface PendingConfirm {
+  message: string;
+  onConfirm: () => void;
+}
+
 export function TimerPage() {
   const timer = useTimer();
-  const { state } = useApp();
+  const { state, clearCompletedTasks } = useApp();
   const { t } = useLang();
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   const today = todayStr();
-  const todayTasks = state.tasks.filter(task => task.date === today);
+  const todayTasks = state.tasks
+    .filter(task => task.date === today && !task.archivedAt)
+    .sort((a, b) => Number(a.completed) - Number(b.completed));
+  const hasCompleted = todayTasks.some(t => t.completed);
+  const needsTaskHint = timer.mode === 'focus' && !timer.activeTaskId && !timer.running;
   const todaySessions = state.sessions.filter(s => s.date === today && s.type === 'focus' && s.completed);
   const bgGradient = BG_COLORS[timer.mode] ?? BG_COLORS.focus;
+
+  function handleSwitchMode(newMode: TimerMode) {
+    if (newMode === timer.mode) return; // already on this mode, do nothing
+    if (timer.running) {
+      setPendingConfirm({
+        message: t.timer.confirmSwitchMode,
+        onConfirm: () => { timer.switchMode(newMode); setPendingConfirm(null); },
+      });
+      return;
+    }
+    timer.switchMode(newMode);
+  }
+
+  function handleSwitchTask(taskId: string) {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (task?.completed) return; // completed tasks cannot be focused
+    if (taskId === timer.activeTaskId) {
+      // While running, ignore deselect clicks — use Pause to stop the timer first
+      if (!timer.running) timer.switchTask(null);
+      return;
+    }
+    if (timer.running) {
+      setPendingConfirm({
+        message: t.timer.confirmSwitchTask,
+        onConfirm: () => { timer.switchTask(taskId); setPendingConfirm(null); },
+      });
+      return;
+    }
+    timer.switchTask(taskId);
+  }
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${bgGradient} transition-all duration-700`}>
       <div className="max-w-xl mx-auto px-4 py-8 flex flex-col items-center gap-6">
 
-        {/* Mode selector */}
-        <TimerModeSelector mode={timer.mode} onSwitch={timer.switchMode} />
+        <TimerModeSelector mode={timer.mode} onSwitch={handleSwitchMode} />
 
-        {/* Timer */}
         <div className="flex flex-col items-center gap-4">
           <TimerDisplay display={timer.display} progress={timer.progress} mode={timer.mode} />
           <TimerControls
             running={timer.running}
+            hasActiveTask={timer.activeTaskId !== null}
+            mode={timer.mode}
             onStart={timer.start}
             onPause={timer.pause}
             onReset={timer.reset}
+            onForceComplete={timer.forceComplete}
           />
-        </div>
-
-        {/* Session info */}
-        <div className="flex items-center gap-3 text-white/60 text-sm">
-          <span>{timer.sessionCount > 0 ? t.timer.session(timer.sessionCount) : ''}</span>
-          {todaySessions.length > 0 && (
-            <span>{t.timer.pomodorosToday(todaySessions.length)}</span>
+          {needsTaskHint && (
+            <p className="text-white/50 text-xs">{t.timer.selectTask}</p>
           )}
         </div>
 
-        {/* Active task indicator */}
+        <div className="flex items-center gap-3 text-white/60 text-sm">
+          {timer.sessionCount > 0 && <span>{t.timer.session(timer.sessionCount)}</span>}
+          {todaySessions.length > 0 && <span>{t.timer.pomodorosToday(todaySessions.length)}</span>}
+        </div>
+
         {timer.activeTaskId && (() => {
           const activeTask = state.tasks.find(t => t.id === timer.activeTaskId);
           return activeTask ? (
@@ -60,9 +103,18 @@ export function TimerPage() {
           ) : null;
         })()}
 
-        {/* Task list */}
         <div className="w-full space-y-3">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-wider opacity-70">{t.tasks.title}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-white font-semibold text-sm uppercase tracking-wider opacity-70">{t.tasks.title}</h2>
+            {hasCompleted && (
+              <button
+                onClick={() => clearCompletedTasks(today)}
+                className="text-white/40 hover:text-white/70 text-xs transition-colors"
+              >
+                {t.tasks.clearCompleted}
+              </button>
+            )}
+          </div>
           <AddTaskForm />
           {todayTasks.length === 0 ? (
             <p className="text-white/40 text-sm text-center py-4">{t.tasks.noTasks}</p>
@@ -73,7 +125,7 @@ export function TimerPage() {
                   key={task.id}
                   task={task}
                   isActive={timer.activeTaskId === task.id}
-                  onSelect={id => timer.switchTask(id === timer.activeTaskId ? null : id)}
+                  onSelect={handleSwitchTask}
                 />
               ))}
             </div>
@@ -81,6 +133,16 @@ export function TimerPage() {
         </div>
 
       </div>
+
+      {pendingConfirm && (
+        <ConfirmModal
+          message={pendingConfirm.message}
+          confirmLabel={t.shared.cancel === 'Cancel' ? 'Switch' : '切り替え'}
+          cancelLabel={t.shared.cancel}
+          onConfirm={pendingConfirm.onConfirm}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
     </div>
   );
 }
