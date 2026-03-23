@@ -90,6 +90,9 @@ const en = {
   auth: {
     signOut: 'Sign out',
     syncing: 'Syncing…',
+    syncNow: 'Sync',
+    pullToRefresh: 'Pull to refresh',
+    releaseToRefresh: 'Release to refresh',
     signInHeader: 'Sign in to MyTask',
     signUpHeader: 'Create your account',
     loggedInAs: 'Logged in as',
@@ -186,6 +189,9 @@ const ja: typeof en = {
   auth: {
     signOut: 'サインアウト',
     syncing: '同期中…',
+    syncNow: '同期',
+    pullToRefresh: '引っ張って更新',
+    releaseToRefresh: '離して更新',
     signInHeader: 'MyTask にサインイン',
     signUpHeader: 'アカウントを作成',
     loggedInAs: 'ログイン中',
