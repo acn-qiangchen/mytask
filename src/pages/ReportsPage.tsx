@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from 'recharts';
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
@@ -46,6 +47,21 @@ export function ReportsPage() {
   }, [focusSessions]);
 
   const hasData = focusSessions.length > 0;
+
+  const todayPieData = useMemo(() => {
+    const todaySessions = focusSessions.filter(s => s.date === today);
+    if (todaySessions.length === 0) return [];
+    const byTask: Record<string, { title: string; minutes: number }> = {};
+    for (const s of todaySessions) {
+      const key = s.taskId ?? '__none__';
+      if (!byTask[key]) {
+        const task = s.taskId ? state.tasks.find(t => t.id === s.taskId) : null;
+        byTask[key] = { title: task?.title ?? t.reports.noTask, minutes: 0 };
+      }
+      byTask[key].minutes += s.duration;
+    }
+    return Object.entries(byTask).map(([, v]) => v);
+  }, [focusSessions, state.tasks, today, t.reports.noTask]);
 
   const taskHistory = useMemo(() => {
     return state.tasks
@@ -124,6 +140,9 @@ export function ReportsPage() {
             </div>
           </>
         )}
+        {/* Today focus distribution pie chart */}
+        <FocusDistributionChart data={todayPieData} title={t.reports.focusDistribution} noDataLabel={t.reports.noDistributionData} />
+
         {/* Task history */}
         <div className="bg-gray-800 rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
@@ -180,6 +199,88 @@ export function ReportsPage() {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+const PIE_COLORS = [
+  '#ef4444', '#f97316', '#eab308', '#22c55e',
+  '#06b6d4', '#3b82f6', '#a855f7', '#ec4899',
+];
+
+interface PieEntry { title: string; minutes: number }
+
+function FocusDistributionChart({ data, title, noDataLabel }: {
+  data: PieEntry[];
+  title: string;
+  noDataLabel: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const total = data.reduce((sum, d) => sum + d.minutes, 0);
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-5">
+      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{title}</h2>
+      {data.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-4">{noDataLabel}</p>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="minutes"
+                nameKey="title"
+                cx="50%"
+                cy="50%"
+                outerRadius={90}
+                innerRadius={40}
+                onClick={(_, index) => setActiveIndex(activeIndex === index ? null : index)}
+              >
+                {data.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={PIE_COLORS[i % PIE_COLORS.length]}
+                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
+                    stroke="transparent"
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
+                labelStyle={{ color: '#f3f4f6' }}
+                formatter={(value, _name, props) => {
+                  const mins = Number(value);
+                  const pct = total > 0 ? Math.round((mins / total) * 100) : 0;
+                  return [`${mins} min (${pct}%)`, (props as { payload?: PieEntry }).payload?.title ?? ''];
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Legend */}
+          <div className="mt-2 space-y-1.5">
+            {data.map((d, i) => {
+              const pct = total > 0 ? Math.round((d.minutes / total) * 100) : 0;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setActiveIndex(activeIndex === i ? null : i)}
+                  className="w-full flex items-center gap-2 text-sm text-left"
+                >
+                  <span
+                    className="shrink-0 w-3 h-3 rounded-full"
+                    style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
+                  />
+                  <span className={`flex-1 truncate ${activeIndex === null || activeIndex === i ? 'text-gray-200' : 'text-gray-500'}`}>
+                    {d.title}
+                  </span>
+                  <span className="text-gray-400 text-xs shrink-0">{d.minutes} min · {pct}%</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
