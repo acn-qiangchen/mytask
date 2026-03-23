@@ -7,6 +7,7 @@ import { loadFromDynamo, saveToDynamo } from '../utils/dynamoSync';
 interface AppContextValue {
   state: AppState;
   syncing: boolean;
+  manualSync: () => Promise<void>;
   addTask: (t: Task) => void;
   updateTask: (t: Task) => void;
   deleteTask: (id: string) => void;
@@ -60,9 +61,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
   }, [state]);
 
+  async function manualSync() {
+    setSyncing(true);
+    const { state: remote, identityId } = await loadFromDynamo();
+    if (remote) {
+      dispatch({ type: 'LOAD_STATE', payload: remote });
+      saveState(remote);
+      if (identityId) saveIdentity(identityId);
+    }
+    setSyncing(false);
+  }
+
   const ctx: AppContextValue = {
     state,
     syncing,
+    manualSync,
     addTask: (t) => dispatch({ type: 'ADD_TASK', payload: t }),
     updateTask: (t) => dispatch({ type: 'UPDATE_TASK', payload: t }),
     deleteTask: (id) => dispatch({ type: 'DELETE_TASK', payload: id }),

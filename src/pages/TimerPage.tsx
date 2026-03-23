@@ -8,6 +8,8 @@ import { TimerControls } from '../components/timer/TimerControls';
 import { AddTaskForm } from '../components/tasks/AddTaskForm';
 import { TaskItem } from '../components/tasks/TaskItem';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
+import { SyncButton } from '../components/shared/SyncButton';
+import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { todayStr } from '../utils/formatters';
 import type { TimerMode } from '../hooks/useTimer';
 
@@ -24,7 +26,7 @@ interface PendingConfirm {
 
 export function TimerPage() {
   const timer = useTimer();
-  const { state, clearCompletedTasks } = useApp();
+  const { state, clearCompletedTasks, manualSync } = useApp();
   const { t } = useLang();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
@@ -78,10 +80,17 @@ export function TimerPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={manualSync}>
     <div className={`min-h-screen bg-gradient-to-br ${bgGradient} transition-all duration-700`}>
       <div className="max-w-xl mx-auto px-4 py-8 flex flex-col items-center gap-6">
 
-        <TimerModeSelector mode={timer.mode} onSwitch={handleSwitchMode} />
+        <div className="w-full flex items-center justify-between">
+          <div className="flex-1" />
+          <TimerModeSelector mode={timer.mode} onSwitch={handleSwitchMode} />
+          <div className="flex-1 flex justify-end">
+            <SyncButton />
+          </div>
+        </div>
 
         <div className="flex flex-col items-center gap-4">
           <TimerDisplay display={timer.display} progress={timer.progress} mode={timer.mode} />
@@ -154,5 +163,6 @@ export function TimerPage() {
         />
       )}
     </div>
+    </PullToRefresh>
   );
 }
