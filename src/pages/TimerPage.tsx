@@ -46,8 +46,7 @@ export function TimerPage() {
     .sort((a, b) => Number(a.completed) - Number(b.completed));
   const hasCompleted = todayTasks.some(t => t.completed);
   const needsTaskHint = timer.mode === 'focus' && !timer.activeTaskId && !timer.running;
-  const todaySessions = state.sessions.filter(s => s.date === today && s.type === 'focus' && s.completed);
-  const pendingTasks = todayTasks.filter(t => !t.completed);
+const pendingTasks = todayTasks.filter(t => !t.completed);
   const pendingPomodoros = pendingTasks.reduce(
     (sum, t) => sum + Math.max(0, t.estimatedPomodoros - t.completedPomodoros),
     0
