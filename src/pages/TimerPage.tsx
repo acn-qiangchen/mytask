@@ -120,7 +120,6 @@ export function TimerPage() {
 
         <div className="flex items-center gap-3 text-white/60 text-sm">
           {timer.sessionCount > 0 && <span>{t.timer.session(timer.sessionCount)}</span>}
-          {todaySessions.length > 0 && <span>{t.timer.pomodorosToday(todaySessions.length)}</span>}
         </div>
 
         {timer.activeTaskId && (() => {
