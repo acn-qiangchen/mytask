@@ -18,3 +18,4 @@ dist/
 
 # Claude Code local settings (personal, not shared)
 .claude/settings.local.json
+.claude/worktrees/
