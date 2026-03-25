@@ -21,6 +21,10 @@ const en = {
     noTaskSelected: 'No task selected',
     selectTask: 'Select a task to focus on',
     pomodorosToday: (n: number) => `${n} pomodoro${n !== 1 ? 's' : ''} today`,
+    queueMessage: (tasks: number, pomodoros: number) => {
+      const motivation = pomodoros >= 9 ? 'Work hard!' : pomodoros >= 4 ? 'Keep it up!' : 'Easy day.';
+      return `You have ${tasks} task${tasks !== 1 ? 's' : ''}, ${pomodoros} pomodoro${pomodoros !== 1 ? 's' : ''} to go. ${motivation}`;
+    },
     forceComplete: 'Done',
     confirmSwitchMode: 'Timer is running. Switch mode and lose current session progress?',
     confirmSwitchTask: 'Timer is running. Switch to this task?',
@@ -123,6 +127,10 @@ const ja: typeof en = {
     noTaskSelected: 'タスク未選択',
     selectTask: '集中するタスクを選択してください',
     pomodorosToday: (n: number) => `今日${n}ポモドーロ`,
+    queueMessage: (tasks: number, pomodoros: number) => {
+      const motivation = pomodoros >= 9 ? '頑張れ！' : pomodoros >= 4 ? '継続は力なり！' : '余裕の一日。';
+      return `残り${tasks}タスク、${pomodoros}ポモドーロです。${motivation}`;
+    },
     forceComplete: '完了',
     confirmSwitchMode: 'タイマーが動作中です。モードを切り替えて現在のセッションを破棄しますか？',
     confirmSwitchTask: 'タイマーが動作中です。このタスクに切り替えますか？',
