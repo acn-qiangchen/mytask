@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import type { DragEndEvent } from '@dnd-kit/core';
 import { useTimer } from '../hooks/useTimer';
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
@@ -11,7 +15,26 @@ import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { SyncButton } from '../components/shared/SyncButton';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { todayStr } from '../utils/formatters';
+import type { Task } from '../types';
 import type { TimerMode } from '../hooks/useTimer';
+
+function SortableTaskItem({ task, isActive, onSelect }: { task: Task; isActive: boolean; onSelect: (id: string) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+    >
+      <TaskItem
+        task={task}
+        isActive={isActive}
+        onSelect={onSelect}
+        dragHandleListeners={listeners}
+        dragHandleAttributes={attributes}
+      />
+    </div>
+  );
+}
 
 const BG_COLORS: Record<string, string> = {
   focus: 'from-red-700 to-red-900',
@@ -26,7 +49,7 @@ interface PendingConfirm {
 
 export function TimerPage() {
   const timer = useTimer();
-  const { state, clearCompletedTasks, manualSync } = useApp();
+  const { state, clearCompletedTasks, manualSync, reorderTasks } = useApp();
   const { t } = useLang();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
@@ -41,17 +64,34 @@ export function TimerPage() {
   }, [state.tasks, timer.activeTaskId, timer.running]);
 
   const today = todayStr();
-  const todayTasks = state.tasks
-    .filter(task => task.date === today && !task.archivedAt)
-    .sort((a, b) => Number(a.completed) - Number(b.completed));
-  const hasCompleted = todayTasks.some(t => t.completed);
+  const todayFiltered = state.tasks.filter(task => task.date === today && !task.archivedAt);
+  const pendingTasks = todayFiltered
+    .filter(t => !t.completed)
+    .sort((a, b) => {
+      const ao = a.order ?? Infinity;
+      const bo = b.order ?? Infinity;
+      return ao !== bo ? ao - bo : a.createdAt.localeCompare(b.createdAt);
+    });
+  const completedTasks = todayFiltered
+    .filter(t => t.completed)
+    .sort((a, b) => (a.completedAt ?? '').localeCompare(b.completedAt ?? ''));
+  const todayTasks = [...pendingTasks, ...completedTasks];
+  const hasCompleted = completedTasks.length > 0;
   const needsTaskHint = timer.mode === 'focus' && !timer.activeTaskId && !timer.running;
-const pendingTasks = todayTasks.filter(t => !t.completed);
   const pendingPomodoros = pendingTasks.reduce(
     (sum, t) => sum + Math.max(0, t.estimatedPomodoros - t.completedPomodoros),
     0
   );
   const bgGradient = BG_COLORS[timer.mode] ?? BG_COLORS.focus;
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = pendingTasks.findIndex(t => t.id === active.id);
+    const newIndex = pendingTasks.findIndex(t => t.id === over.id);
+    const reordered = arrayMove(pendingTasks, oldIndex, newIndex);
+    reorderTasks(reordered.map(t => t.id));
+  }
 
   function handleSwitchMode(newMode: TimerMode) {
     if (newMode === timer.mode) return; // already on this mode, do nothing
@@ -147,11 +187,23 @@ const pendingTasks = todayTasks.filter(t => !t.completed);
             <p className="text-white/40 text-sm text-center py-4">{t.tasks.noTasks}</p>
           ) : (
             <div className="space-y-1.5">
-              {todayTasks.map(task => (
+              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={pendingTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  {pendingTasks.map(task => (
+                    <SortableTaskItem
+                      key={task.id}
+                      task={task}
+                      isActive={timer.activeTaskId === task.id}
+                      onSelect={handleSwitchTask}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {completedTasks.map(task => (
                 <TaskItem
                   key={task.id}
                   task={task}
-                  isActive={timer.activeTaskId === task.id}
+                  isActive={false}
                   onSelect={handleSwitchTask}
                 />
               ))}

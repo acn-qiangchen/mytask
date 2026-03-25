@@ -16,6 +16,7 @@ interface AppContextValue {
   incrementTaskPomodoro: (taskId: string) => void;
   updateSettings: (s: Settings) => void;
   setDate: (date: string) => void;
+  reorderTasks: (orderedIds: string[]) => void;
 }
 
 export const AppContext = createContext<AppContextValue | null>(null);
@@ -90,6 +91,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     incrementTaskPomodoro: (taskId) => dispatch({ type: 'INCREMENT_TASK_POMODORO', payload: taskId }),
     updateSettings: (s) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }),
     setDate: (date) => dispatch({ type: 'SET_DATE', payload: date }),
+    reorderTasks: (orderedIds) => dispatch({ type: 'REORDER_TASKS', payload: orderedIds }),
   };
 
   return <AppContext.Provider value={ctx}>{children}</AppContext.Provider>;
