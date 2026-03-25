@@ -47,6 +47,11 @@ export function TimerPage() {
   const hasCompleted = todayTasks.some(t => t.completed);
   const needsTaskHint = timer.mode === 'focus' && !timer.activeTaskId && !timer.running;
   const todaySessions = state.sessions.filter(s => s.date === today && s.type === 'focus' && s.completed);
+  const pendingTasks = todayTasks.filter(t => !t.completed);
+  const pendingPomodoros = pendingTasks.reduce(
+    (sum, t) => sum + Math.max(0, t.estimatedPomodoros - t.completedPomodoros),
+    0
+  );
   const bgGradient = BG_COLORS[timer.mode] ?? BG_COLORS.focus;
 
   function handleSwitchMode(newMode: TimerMode) {
@@ -105,6 +110,11 @@ export function TimerPage() {
           />
           {needsTaskHint && (
             <p className="text-white/50 text-xs">{t.timer.selectTask}</p>
+          )}
+          {pendingTasks.length > 0 && (
+            <p className="text-white/60 text-xs text-center">
+              {t.timer.queueMessage(pendingTasks.length, pendingPomodoros)}
+            </p>
           )}
         </div>
 
