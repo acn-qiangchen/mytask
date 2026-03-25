@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -52,6 +52,10 @@ export function TimerPage() {
   const { state, clearCompletedTasks, manualSync, reorderTasks } = useApp();
   const { t } = useLang();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+  );
 
   // Pause and deselect if the active task is marked complete while timer is running
   useEffect(() => {
@@ -187,7 +191,7 @@ export function TimerPage() {
             <p className="text-white/40 text-sm text-center py-4">{t.tasks.noTasks}</p>
           ) : (
             <div className="space-y-1.5">
-              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={pendingTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                   {pendingTasks.map(task => (
                     <SortableTaskItem
