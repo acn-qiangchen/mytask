@@ -1,6 +1,6 @@
 ---
 name: fetch-implement-issue
-description: Fetch open GitHub issues, let the user pick one, then implement it on a new branch and open a PR to main.
+description: Fetch open GitHub issues, let the user pick one, then implement it on a new branch, run unit tests, open a PR, and merge it to main.
 ---
 
 Fetch open GitHub issues for this repository and help the user pick one to implement.
@@ -32,12 +32,42 @@ Once the user picks an issue number N:
 
 Enter plan mode to research and plan the implementation for the chosen issue, then implement it following the plan. Refer to CLAUDE.md for architecture context and constraints.
 
-## Step 5 — Push and open PR
+As part of implementation, write unit tests alongside the code changes:
+- Place test files next to the source files they test (e.g. `src/utils/foo.test.ts` for `src/utils/foo.ts`).
+- Cover the core logic: happy path, edge cases, and any bug-specific regression cases.
+- Use the existing test framework already configured in the project.
 
-After implementation is complete and the build passes (`npm run build`):
+## Step 5 — Build and unit tests
+
+After implementation, verify the build passes and run unit tests:
+```bash
+npm run build
+npm test -- --run
+```
+
+If any tests fail, fix the failures before proceeding. If no test file exists for the changed code, write appropriate unit tests covering the core logic of the implementation.
+
+## Step 6 — Push and open PR
+
+Once build and tests pass:
 ```bash
 git push -u origin <branch>
 /opt/homebrew/bin/gh pr create --base main --title "<issue title>" --body "..."
 ```
 
 The PR body should summarise what was done and include `Closes #<N>`.
+
+## Step 7 — Wait for CI and merge PR
+
+1. Wait for GitHub Actions CI to complete:
+   ```bash
+   /opt/homebrew/bin/gh pr checks <PR-number> --watch
+   ```
+2. Once all checks pass, merge the PR:
+   ```bash
+   /opt/homebrew/bin/gh pr merge <PR-number> --squash --delete-branch
+   ```
+3. Pull the updated main locally:
+   ```bash
+   git checkout main && git pull
+   ```
