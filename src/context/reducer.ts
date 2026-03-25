@@ -17,16 +17,17 @@ export function appReducer(state: AppState, action: Action): AppState {
       return action.payload;
 
     case 'ADD_TASK':
-      return { ...state, tasks: [...state.tasks, action.payload] };
+      return { ...state, tasks: [...state.tasks, action.payload], updatedAt: new Date().toISOString() };
 
     case 'UPDATE_TASK':
       return {
         ...state,
         tasks: state.tasks.map(t => t.id === action.payload.id ? action.payload : t),
+        updatedAt: new Date().toISOString(),
       };
 
     case 'DELETE_TASK':
-      return { ...state, tasks: state.tasks.filter(t => t.id !== action.payload) };
+      return { ...state, tasks: state.tasks.filter(t => t.id !== action.payload), updatedAt: new Date().toISOString() };
 
     case 'CLEAR_COMPLETED_TASKS':
       return {
@@ -36,10 +37,11 @@ export function appReducer(state: AppState, action: Action): AppState {
             ? { ...t, archivedAt: new Date().toISOString() }
             : t
         ),
+        updatedAt: new Date().toISOString(),
       };
 
     case 'ADD_SESSION':
-      return { ...state, sessions: [...state.sessions, action.payload] };
+      return { ...state, sessions: [...state.sessions, action.payload], updatedAt: new Date().toISOString() };
 
     case 'INCREMENT_TASK_POMODORO':
       return {
@@ -49,10 +51,11 @@ export function appReducer(state: AppState, action: Action): AppState {
             ? { ...t, completedPomodoros: t.completedPomodoros + 1 }
             : t
         ),
+        updatedAt: new Date().toISOString(),
       };
 
     case 'UPDATE_SETTINGS':
-      return { ...state, settings: action.payload };
+      return { ...state, settings: action.payload, updatedAt: new Date().toISOString() };
 
     case 'SET_DATE':
       return { ...state, selectedDate: action.payload };

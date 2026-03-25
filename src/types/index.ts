@@ -36,4 +36,5 @@ export interface AppState {
   sessions: Session[];
   settings: Settings;
   selectedDate: string; // YYYY-MM-DD
+  updatedAt?: string;   // ISO timestamp — set on every local mutation; used for merge conflict resolution
 }
