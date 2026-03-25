@@ -1,7 +1,7 @@
 import React, { createContext, useReducer, useEffect, useRef, useState } from 'react';
 import type { AppState, Task, Session, Settings } from '../types';
 import { appReducer } from './reducer';
-import { loadState, saveState, loadStoredIdentity, saveIdentity, defaultAppState } from '../utils/storage';
+import { loadState, saveState, loadStoredIdentity, saveIdentity, defaultAppState, mergeStates } from '../utils/storage';
 import { loadFromDynamo, saveToDynamo } from '../utils/dynamoSync';
 
 interface AppContextValue {
@@ -39,8 +39,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         saveState(fresh);
         saveIdentity(identityId);
       } else if (remote) {
-        dispatch({ type: 'LOAD_STATE', payload: remote });
-        saveState(remote);
+        const local = loadState();
+        const merged = mergeStates(local, remote);
+        dispatch({ type: 'LOAD_STATE', payload: merged });
+        saveState(merged);
         if (identityId) saveIdentity(identityId);
       } else if (identityId) {
         saveIdentity(identityId);
@@ -52,8 +54,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loadingFromRemote.current) return;
-    saveState(state);
+    saveState(state);                        // always keep localStorage current
+    if (loadingFromRemote.current) return;   // guard only the DynamoDB write
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       saveToDynamo(state);
@@ -63,11 +65,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   async function manualSync() {
     setSyncing(true);
+    if (saveTimer.current) clearTimeout(saveTimer.current); // cancel any pending stale write
     const { state: remote, identityId } = await loadFromDynamo();
     if (remote) {
-      dispatch({ type: 'LOAD_STATE', payload: remote });
-      saveState(remote);
+      const local = loadState();
+      const merged = mergeStates(local, remote);
+      dispatch({ type: 'LOAD_STATE', payload: merged });
+      saveState(merged);
       if (identityId) saveIdentity(identityId);
+      await saveToDynamo(merged); // push merged state immediately
     }
     setSyncing(false);
   }
