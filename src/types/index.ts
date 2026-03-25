@@ -6,6 +6,7 @@ export interface Task {
   date: string; // YYYY-MM-DD
   completed: boolean;
   note?: string;
+  order?: number;
   createdAt: string;
   completedAt?: string;  // ISO timestamp — set when task is marked complete
   archivedAt?: string;   // ISO timestamp — set when task is cleared from the day view

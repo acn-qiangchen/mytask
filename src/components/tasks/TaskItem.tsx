@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { DraggableAttributes } from '@dnd-kit/core';
+import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 import type { Task } from '../../types';
 import { useApp } from '../../hooks/useApp';
 import { useLang } from '../../hooks/useLang';
@@ -7,9 +9,11 @@ interface Props {
   task: Task;
   isActive: boolean;
   onSelect: (id: string) => void;
+  dragHandleListeners?: SyntheticListenerMap;
+  dragHandleAttributes?: DraggableAttributes;
 }
 
-export function TaskItem({ task, isActive, onSelect }: Props) {
+export function TaskItem({ task, isActive, onSelect, dragHandleListeners, dragHandleAttributes }: Props) {
   const { updateTask, deleteTask } = useApp();
   const { t } = useLang();
   const [editing, setEditing] = useState(false);
@@ -74,6 +78,19 @@ export function TaskItem({ task, isActive, onSelect }: Props) {
       } ${isActive ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
       onClick={() => { if (!task.completed) onSelect(task.id); }}
     >
+      {dragHandleListeners && (
+        <button
+          {...dragHandleListeners}
+          {...dragHandleAttributes}
+          onClick={e => e.stopPropagation()}
+          className="flex items-center justify-center w-5 h-10 flex-shrink-0 text-white/30 touch-none cursor-grab active:cursor-grabbing"
+          aria-label="Drag to reorder"
+        >
+          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M7 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm6-12a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm0 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+          </svg>
+        </button>
+      )}
       <button
         onClick={e => { e.stopPropagation(); toggleComplete(); }}
         className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-colors ${

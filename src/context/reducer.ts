@@ -9,7 +9,8 @@ export type Action =
   | { type: 'ADD_SESSION'; payload: Session }
   | { type: 'INCREMENT_TASK_POMODORO'; payload: string }
   | { type: 'UPDATE_SETTINGS'; payload: Settings }
-  | { type: 'SET_DATE'; payload: string };
+  | { type: 'SET_DATE'; payload: string }
+  | { type: 'REORDER_TASKS'; payload: string[] };  // ordered array of task IDs
 
 export function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -59,6 +60,17 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case 'SET_DATE':
       return { ...state, selectedDate: action.payload };
+
+    case 'REORDER_TASKS': {
+      const idToOrder = new Map(action.payload.map((id, i) => [id, i]));
+      return {
+        ...state,
+        tasks: state.tasks.map(t =>
+          idToOrder.has(t.id) ? { ...t, order: idToOrder.get(t.id) } : t
+        ),
+        updatedAt: new Date().toISOString(),
+      };
+    }
 
     default:
       return state;
