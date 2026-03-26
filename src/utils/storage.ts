@@ -1,5 +1,6 @@
 import type { AppState } from '../types';
 import { DEFAULT_SETTINGS } from '../constants/defaults';
+import { logSync } from './syncLog';
 
 const STATE_KEY = 'mytask_state';
 const IDENTITY_KEY = 'mytask_identity';
@@ -14,7 +15,7 @@ export function defaultAppState(): AppState {
     sessions: [],
     settings: { ...DEFAULT_SETTINGS },
     selectedDate: todayStr(),
-    updatedAt: new Date().toISOString(),
+    updatedAt: new Date(0).toISOString(), // epoch — always loses to real data in mergeStates
   };
 }
 
@@ -29,9 +30,18 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
   const taskIds = new Set(primary.tasks.map(t => t.id));
   const sessionIds = new Set(primary.sessions.map(s => s.id));
 
+  const mergedFromSecondary = secondary.tasks.filter(t => !taskIds.has(t.id));
+  logSync(
+    'mergeStates',
+    `winner=${remoteNewer ? 'remote' : 'local'} ` +
+    `primary.tasks=${primary.tasks.length} secondary.tasks=${secondary.tasks.length} ` +
+    `merged_in=${mergedFromSecondary.length} ` +
+    `local.updatedAt=${local.updatedAt ?? 'none'} remote.updatedAt=${remote.updatedAt ?? 'none'}`
+  );
+
   return {
     ...primary,
-    tasks: [...primary.tasks, ...secondary.tasks.filter(t => !taskIds.has(t.id))],
+    tasks: [...primary.tasks, ...mergedFromSecondary],
     sessions: [...primary.sessions, ...secondary.sessions.filter(s => !sessionIds.has(s.id))],
     updatedAt: new Date().toISOString(),
   };

@@ -13,6 +13,7 @@ export function TopBar() {
     { to: '/', label: t.nav.timer },
     { to: '/reports', label: t.nav.reports },
     { to: '/settings', label: t.nav.settings },
+    { to: '/debug', label: 'Debug' },
   ];
 
   return (
