@@ -9,6 +9,7 @@ import { TopBar } from './components/layout/TopBar';
 import { TimerPage } from './pages/TimerPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { DebugPage } from './pages/DebugPage';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
                     <Route path="/" element={<TimerPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/debug" element={<DebugPage />} />
                   </Routes>
                 </main>
               </div>

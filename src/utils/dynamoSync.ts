@@ -2,6 +2,7 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import type { AppState } from '../types';
+import { logSync } from './syncLog';
 
 const REGION = 'ap-northeast-1';
 const TABLE = 'MyTask';
@@ -38,9 +39,13 @@ export async function loadFromDynamo(): Promise<DynamoLoadResult> {
     const state = res.Item?.data
       ? JSON.parse(res.Item.data as string) as AppState
       : null;
+    logSync('loadFromDynamo', state
+      ? `tasks=${state.tasks.length} sessions=${state.sessions.length} updatedAt=${state.updatedAt ?? 'none'}`
+      : 'no data in DynamoDB');
     return { state, identityId };
   } catch (err) {
     console.error('DynamoDB load error:', err);
+    logSync('loadFromDynamo:error', String(err));
     return { state: null, identityId: null };
   }
 }
@@ -48,6 +53,24 @@ export async function loadFromDynamo(): Promise<DynamoLoadResult> {
 export async function saveToDynamo(state: AppState): Promise<void> {
   try {
     const { client, identityId } = await getSession();
+
+    // Guard: refuse to overwrite existing non-empty data with an empty state
+    if (state.tasks.length === 0 && state.sessions.length === 0) {
+      const existing = await client.send(new GetCommand({
+        TableName: TABLE,
+        Key: { userId: identityId, sk: SK },
+      }));
+      if (existing.Item?.data) {
+        const existingState = JSON.parse(existing.Item.data as string) as AppState;
+        if (existingState.tasks.length > 0 || existingState.sessions.length > 0) {
+          logSync('saveToDynamo:blocked', `refused to overwrite dynamo (tasks=${existingState.tasks.length}) with empty state`);
+          console.warn('saveToDynamo: blocked empty-state overwrite of existing data');
+          return;
+        }
+      }
+    }
+
+    logSync('saveToDynamo', `tasks=${state.tasks.length} sessions=${state.sessions.length} updatedAt=${state.updatedAt ?? 'none'}`);
     await client.send(new PutCommand({
       TableName: TABLE,
       Item: {
@@ -59,5 +82,6 @@ export async function saveToDynamo(state: AppState): Promise<void> {
     }));
   } catch (err) {
     console.error('DynamoDB save error:', err);
+    logSync('saveToDynamo:error', String(err));
   }
 }
