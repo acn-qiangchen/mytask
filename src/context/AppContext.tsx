@@ -3,6 +3,7 @@ import type { AppState, Task, Session, Settings } from '../types';
 import { appReducer } from './reducer';
 import { loadState, saveState, loadStoredIdentity, saveIdentity, defaultAppState, mergeStates } from '../utils/storage';
 import { loadFromDynamo, saveToDynamo } from '../utils/dynamoSync';
+import { logSync } from '../utils/syncLog';
 
 interface AppContextValue {
   state: AppState;
@@ -26,6 +27,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [syncing, setSyncing] = useState(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingFromRemote = useRef(false);
+  const syncedTaskIdsRef = useRef<Set<string>>(new Set());
+  const prevTaskCountRef = useRef<number>(state.tasks.length);
 
   useEffect(() => {
     setSyncing(true);
@@ -39,12 +42,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'LOAD_STATE', payload: fresh });
         saveState(fresh);
         saveIdentity(identityId);
+        syncedTaskIdsRef.current = new Set(fresh.tasks.map(t => t.id));
       } else if (remote) {
         const local = loadState();
         const merged = mergeStates(local, remote);
         dispatch({ type: 'LOAD_STATE', payload: merged });
         saveState(merged);
         if (identityId) saveIdentity(identityId);
+        syncedTaskIdsRef.current = new Set(merged.tasks.map(t => t.id));
+        logSync('hydrate:complete',
+          `dynamo.tasks=${remote.tasks.length} local.tasks=${local.tasks.length} merged.tasks=${merged.tasks.length}`
+        );
       } else if (identityId) {
         saveIdentity(identityId);
       }
@@ -56,10 +64,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     saveState(state);                        // always keep localStorage current
+
+    // Log state change with sync metrics
+    const unsyncedCount = state.tasks.filter(t => !syncedTaskIdsRef.current.has(t.id)).length;
+    const todayTasks = state.tasks.filter(t => t.date === state.selectedDate).length;
+    logSync('stateChange',
+      `tasks=${state.tasks.length} todayTasks=${todayTasks} unsynced=${unsyncedCount} selectedDate=${state.selectedDate}`
+    );
+
+    // Warn on bulk task drop (2+ tasks disappear at once)
+    const dropped = prevTaskCountRef.current - state.tasks.length;
+    if (dropped >= 2) {
+      logSync('tasks:bulk-drop:warning',
+        `tasks dropped from ${prevTaskCountRef.current} to ${state.tasks.length} ` +
+        `remaining_ids=[${state.tasks.map(t => t.id).join(',')}]`
+      );
+      console.warn('tasks:bulk-drop', { dropped, prevCount: prevTaskCountRef.current, currentCount: state.tasks.length, tasks: state.tasks });
+    }
+    prevTaskCountRef.current = state.tasks.length;
+
     if (loadingFromRemote.current) return;   // guard only the DynamoDB write
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveToDynamo(state);
+    saveTimer.current = setTimeout(async () => {
+      await saveToDynamo(state);
+      syncedTaskIdsRef.current = new Set(state.tasks.map(t => t.id));
     }, 1500);
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
   }, [state]);
@@ -75,6 +103,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       saveState(merged);
       if (identityId) saveIdentity(identityId);
       await saveToDynamo(merged); // push merged state immediately
+      syncedTaskIdsRef.current = new Set(merged.tasks.map(t => t.id));
+      logSync('manualSync:complete',
+        `dynamo.tasks=${remote.tasks.length} local.tasks=${local.tasks.length} merged.tasks=${merged.tasks.length}`
+      );
     }
     setSyncing(false);
   }
