@@ -4,16 +4,18 @@ import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
 import type { Task } from '../../types';
 import { useApp } from '../../hooks/useApp';
 import { useLang } from '../../hooks/useLang';
+import { shortDate } from '../../utils/formatters';
 
 interface Props {
   task: Task;
   isActive: boolean;
+  isDelayed?: boolean;
   onSelect: (id: string) => void;
   dragHandleListeners?: SyntheticListenerMap;
   dragHandleAttributes?: DraggableAttributes;
 }
 
-export function TaskItem({ task, isActive, onSelect, dragHandleListeners, dragHandleAttributes }: Props) {
+export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHandleListeners, dragHandleAttributes }: Props) {
   const { updateTask, deleteTask } = useApp();
   const { t } = useLang();
   const [editing, setEditing] = useState(false);
@@ -71,11 +73,18 @@ export function TaskItem({ task, isActive, onSelect, dragHandleListeners, dragHa
     );
   }
 
+  const delayedBase = isDelayed
+    ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/15'
+    : 'bg-white/5 hover:bg-white/10 border-transparent';
+  const activeStyle = isActive
+    ? (isDelayed ? 'bg-amber-500/20 border-amber-500/50' : 'bg-white/20 border-white/30')
+    : delayedBase;
+
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 group transition-colors ${
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 group transition-colors border ${
         task.completed ? 'cursor-default opacity-50' : 'cursor-pointer'
-      } ${isActive ? 'bg-white/20 border border-white/30' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+      } ${activeStyle}`}
       onClick={() => { if (!task.completed) onSelect(task.id); }}
     >
       {dragHandleListeners && (
@@ -104,8 +113,13 @@ export function TaskItem({ task, isActive, onSelect, dragHandleListeners, dragHa
         )}
       </button>
 
-      <span className={`flex-1 text-sm text-white ${task.completed ? 'line-through' : ''}`}>
+      <span className={`flex-1 text-sm text-white min-w-0 ${task.completed ? 'line-through' : ''}`}>
         {task.title}
+        {isDelayed && (
+          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-300 shrink-0">
+            {shortDate(task.date)}
+          </span>
+        )}
       </span>
 
       <div className="flex items-center gap-1 text-xs text-white/50 shrink-0">

@@ -61,6 +61,17 @@ Tasks are per-day: `state.tasks.filter(t => t.date === todayStr())`. There is no
 
 HashRouter with three routes: `/` (TimerPage), `/reports` (ReportsPage), `/settings` (SettingsPage). HashRouter is used for GitHub Pages compatibility (no server-side routing needed).
 
+## Requirements
+
+`REQUIREMENTS.md` is the single source of truth for all user-facing features and behaviours.
+
+**Any time a feature is added, changed, or removed, you must update `REQUIREMENTS.md` as part of the same PR.** This includes:
+- New requirement IDs for new behaviour (use the next available number in the relevant section).
+- Updates to existing requirement text if behaviour changes.
+- Removal of requirement rows if a feature is deliberately removed.
+
+Do not merge a feature PR without a corresponding `REQUIREMENTS.md` update.
+
 ## Git workflow
 
 - Always work on a dedicated branch — never commit directly to `main` or `master`.
