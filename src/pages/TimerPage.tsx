@@ -18,7 +18,7 @@ import { todayStr } from '../utils/formatters';
 import type { Task } from '../types';
 import type { TimerMode } from '../hooks/useTimer';
 
-function SortableTaskItem({ task, isActive, onSelect }: { task: Task; isActive: boolean; onSelect: (id: string) => void }) {
+function SortableTaskItem({ task, isActive, isDelayed, onSelect }: { task: Task; isActive: boolean; isDelayed: boolean; onSelect: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
   return (
     <div
@@ -28,6 +28,7 @@ function SortableTaskItem({ task, isActive, onSelect }: { task: Task; isActive: 
       <TaskItem
         task={task}
         isActive={isActive}
+        isDelayed={isDelayed}
         onSelect={onSelect}
         dragHandleListeners={listeners}
         dragHandleAttributes={attributes}
@@ -68,16 +69,15 @@ export function TimerPage() {
   }, [state.tasks, timer.activeTaskId, timer.running]);
 
   const today = todayStr();
-  const todayFiltered = state.tasks.filter(task => task.date === today && !task.archivedAt);
-  const pendingTasks = todayFiltered
-    .filter(t => !t.completed)
+  const pendingTasks = state.tasks
+    .filter(t => !t.completed && !t.archivedAt)
     .sort((a, b) => {
       const ao = a.order ?? Infinity;
       const bo = b.order ?? Infinity;
       return ao !== bo ? ao - bo : a.createdAt.localeCompare(b.createdAt);
     });
-  const completedTasks = todayFiltered
-    .filter(t => t.completed)
+  const completedTasks = state.tasks
+    .filter(t => t.completed && t.date === today && !t.archivedAt)
     .sort((a, b) => (a.completedAt ?? '').localeCompare(b.completedAt ?? ''));
   const todayTasks = [...pendingTasks, ...completedTasks];
   const hasCompleted = completedTasks.length > 0;
@@ -198,6 +198,7 @@ export function TimerPage() {
                       key={task.id}
                       task={task}
                       isActive={timer.activeTaskId === task.id}
+                      isDelayed={task.date < today}
                       onSelect={handleSwitchTask}
                     />
                   ))}
