@@ -1,55 +1,12 @@
-import { fetchAuthSession } from 'aws-amplify/auth';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import type { AppState } from '../types';
 import { logSync } from './syncLog';
+import { attemptWithRetry } from './dynamoClient';
 
-const REGION = 'ap-northeast-1';
+export { isCredentialError } from './dynamoClient';
+
 const TABLE = 'MyTask';
 const SK = 'STATE';
-
-interface SessionData {
-  client: DynamoDBDocumentClient;
-  identityId: string;
-}
-
-async function getSession(forceRefresh = false): Promise<SessionData> {
-  const session = await fetchAuthSession({ forceRefresh });
-  const { accessKeyId, secretAccessKey, sessionToken } = session.credentials!;
-  const identityId = session.identityId!;
-  const raw = new DynamoDBClient({
-    region: REGION,
-    credentials: { accessKeyId, secretAccessKey, sessionToken },
-  });
-  return { client: DynamoDBDocumentClient.from(raw), identityId };
-}
-
-export function isCredentialError(err: unknown): boolean {
-  if (!err) return false;
-  const name = (err as { name?: string }).name ?? '';
-  const msg = String(err);
-  return (
-    name === 'NotAuthorizedException' ||
-    name === 'InvalidSignatureException' ||
-    name === 'ExpiredTokenException' ||
-    name === 'UnauthorizedException' ||
-    msg.includes('expired') ||
-    msg.includes('credentials') ||
-    msg.includes('Signature')
-  );
-}
-
-async function attemptWithRetry<T>(fn: (session: SessionData) => Promise<T>): Promise<T> {
-  try {
-    const session = await getSession();
-    return await fn(session);
-  } catch (err) {
-    if (!isCredentialError(err)) throw err;
-    logSync('dynamoSync:credential-error', `retrying with forceRefresh: ${String(err)}`);
-    const session = await getSession(true);
-    return await fn(session);
-  }
-}
 
 export interface DynamoLoadResult {
   state: AppState | null;
