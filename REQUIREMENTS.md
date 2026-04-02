@@ -164,11 +164,11 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 
 | ID    | Requirement                                                                      |
 | ----- | -------------------------------------------------------------------------------- |
-| RPT-4 | A **weekly bar chart** shows focus time (minutes) for each of the last 7 days.   |
-| RPT-5 | A **monthly bar chart** shows focus time (minutes) for each of the last 30 days. |
-| RPT-6 | A **focus distribution pie chart** shows today's focus time broken down by task. |
-| RPT-7 | In the pie chart, sessions with no linked task are grouped as "No Task".         |
-| RPT-8 | If no focus session data exists, charts are replaced by a "No data yet" message. |
+| RPT-4 | A single **daily focus bar chart** shows focus time (minutes) per day with a **This Week / This Month** toggle to switch between 7-day and 30-day views. |
+| RPT-5 | *(merged into RPT-4)*                                                                                                                                    |
+| RPT-6 | A **focus distribution pie chart** shows focus time broken down by task for the active date range filter (defaults to today when no filter is set).      |
+| RPT-7 | In the pie chart, sessions with no linked task are grouped as "No Task".                                                                                 |
+| RPT-8 | If no focus session data exists, charts are replaced by a "No data yet" message.                                                                         |
 
 
 ### 5.3 Task History
@@ -179,8 +179,8 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | RPT-9  | The reports page shows a filterable history table of completed and archived tasks.                            |
 | RPT-10 | Each row shows: title, pomodoro count (completed/estimated), started timestamp, completed/archived timestamp. |
 | RPT-11 | Archived tasks are shown at 50% opacity to distinguish them from completed tasks.                             |
-| RPT-12 | The user can filter history by a date range (From / To).                                                      |
-| RPT-13 | A clear-filter button (✕) removes the date filter when a range is active.                                     |
+| RPT-12 | A date range filter (From / To) placed above the focus distribution chart applies to **both** the focus distribution chart and the task history table. |
+| RPT-13 | A clear-filter button (✕) removes the date filter when a range is active.                                                                             |
 | RPT-14 | If no task history exists for the selected range, a "No task history" message is shown.                       |
 
 

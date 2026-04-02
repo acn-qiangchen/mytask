@@ -12,6 +12,7 @@ export function ReportsPage() {
   const { t } = useLang();
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [barChartSpan, setBarChartSpan] = useState<'weekly' | 'monthly'>('weekly');
 
   const today = todayStr();
   const focusSessions = state.sessions.filter(s => s.type === 'focus' && s.completed);
@@ -48,20 +49,26 @@ export function ReportsPage() {
 
   const hasData = focusSessions.length > 0;
 
-  const todayPieData = useMemo(() => {
-    const todaySessions = focusSessions.filter(s => s.date === today);
-    if (todaySessions.length === 0) return [];
+  // Focus distribution: use date filter when set, otherwise default to today
+  const pieData = useMemo(() => {
+    const sessions = focusSessions.filter(s => {
+      if (fromDate || toDate) {
+        return (!fromDate || s.date >= fromDate) && (!toDate || s.date <= toDate);
+      }
+      return s.date === today;
+    });
+    if (sessions.length === 0) return [];
     const byTask: Record<string, { title: string; minutes: number }> = {};
-    for (const s of todaySessions) {
+    for (const s of sessions) {
       const key = s.taskId ?? '__none__';
       if (!byTask[key]) {
-        const task = s.taskId ? state.tasks.find(t => t.id === s.taskId) : null;
+        const task = s.taskId ? state.tasks.find(tsk => tsk.id === s.taskId) : null;
         byTask[key] = { title: task?.title ?? t.reports.noTask, minutes: 0 };
       }
       byTask[key].minutes += s.duration;
     }
     return Object.entries(byTask).map(([, v]) => v);
-  }, [focusSessions, state.tasks, today, t.reports.noTask]);
+  }, [focusSessions, state.tasks, today, fromDate, toDate, t.reports.noTask]);
 
   const taskHistory = useMemo(() => {
     return state.tasks
@@ -81,6 +88,10 @@ export function ReportsPage() {
     });
   }, [taskHistory, fromDate, toDate]);
 
+  const barData = barChartSpan === 'weekly' ? weeklyData : monthlyData;
+  const xAxisFontSize = barChartSpan === 'monthly' ? 9 : 11;
+  const xAxisInterval = barChartSpan === 'monthly' ? 4 : undefined;
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
@@ -96,82 +107,90 @@ export function ReportsPage() {
         {!hasData ? (
           <div className="text-center text-gray-500 py-12">{t.reports.noData}</div>
         ) : (
-          <>
-            {/* Weekly chart */}
-            <div className="bg-gray-800 rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                {t.reports.weekly} — {t.reports.daily}
+          /* Combined weekly/monthly bar chart with toggle */
+          <div className="bg-gray-800 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                {t.reports.daily}
               </h2>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={weeklyData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
-                    labelStyle={{ color: '#f3f4f6' }}
-                    itemStyle={{ color: '#ef4444' }}
-                    formatter={(v) => [`${v} min`, t.reports.barLabel]}
-                  />
-                  <Bar dataKey="minutes" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="flex rounded-lg overflow-hidden border border-gray-700 text-xs font-medium">
+                <button
+                  onClick={() => setBarChartSpan('weekly')}
+                  className={`px-3 py-1 transition-colors ${
+                    barChartSpan === 'weekly'
+                      ? 'bg-gray-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  {t.reports.weekly}
+                </button>
+                <button
+                  onClick={() => setBarChartSpan('monthly')}
+                  className={`px-3 py-1 transition-colors border-l border-gray-700 ${
+                    barChartSpan === 'monthly'
+                      ? 'bg-gray-600 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  {t.reports.monthly}
+                </button>
+              </div>
             </div>
-
-            {/* Monthly chart */}
-            <div className="bg-gray-800 rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                {t.reports.monthly} — {t.reports.daily}
-              </h2>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={monthlyData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 9 }} interval={4} />
-                  <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
-                    labelStyle={{ color: '#f3f4f6' }}
-                    itemStyle={{ color: '#ef4444' }}
-                    formatter={(v) => [`${v} min`, t.reports.barLabel]}
-                  />
-                  <Bar dataKey="minutes" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: xAxisFontSize }} interval={xAxisInterval} />
+                <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
+                  labelStyle={{ color: '#f3f4f6' }}
+                  itemStyle={{ color: '#ef4444' }}
+                  formatter={(v) => [`${v} min`, t.reports.barLabel]}
+                />
+                <Bar dataKey="minutes" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
-        {/* Today focus distribution pie chart */}
-        <FocusDistributionChart data={todayPieData} title={t.reports.focusDistribution} noDataLabel={t.reports.noDistributionData} />
 
-        {/* Task history */}
+        {/* Date range filter — applies to Focus Distribution and Task History below */}
+        <div className="flex items-center gap-3 text-sm">
+          <label className="text-gray-400 shrink-0">{t.reports.from}</label>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={e => setFromDate(e.target.value)}
+            className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
+          />
+          <label className="text-gray-400 shrink-0">{t.reports.to}</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={e => setToDate(e.target.value)}
+            className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
+          />
+          {(fromDate || toDate) && (
+            <button
+              onClick={() => { setFromDate(''); setToDate(''); }}
+              className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Focus distribution (filtered by date range; defaults to today) */}
+        <FocusDistributionChart
+          data={pieData}
+          title={t.reports.focusDistribution}
+          noDataLabel={t.reports.noDistributionData}
+        />
+
+        {/* Task history (filtered by the same date range) */}
         <div className="bg-gray-800 rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
             {t.reports.taskHistory}
           </h2>
-          <div className="flex items-center gap-3 text-sm">
-            <label className="text-gray-400 shrink-0">{t.reports.from}</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={e => setFromDate(e.target.value)}
-              className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
-            />
-            <label className="text-gray-400 shrink-0">{t.reports.to}</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={e => setToDate(e.target.value)}
-              className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
-            />
-            {(fromDate || toDate) && (
-              <button
-                onClick={() => { setFromDate(''); setToDate(''); }}
-                className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
-              >
-                ✕
-              </button>
-            )}
-          </div>
           {filteredHistory.length === 0 ? (
             <p className="text-gray-500 text-sm text-center py-4">{t.reports.noTaskHistory}</p>
           ) : (
