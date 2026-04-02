@@ -69,8 +69,8 @@ const en = {
     historyPomodoros: 'Pomodoros',
     from: 'From',
     to: 'To',
-    focusDistribution: "Today's Focus Distribution",
-    noDistributionData: 'No focus sessions today.',
+    focusDistribution: 'Focus Distribution',
+    noDistributionData: 'No focus sessions to display.',
     noTask: 'No Task',
   },
   settings: {
@@ -175,8 +175,8 @@ const ja: typeof en = {
     historyPomodoros: 'ポモドーロ',
     from: '開始日',
     to: '終了日',
-    focusDistribution: '今日の集中時間分布',
-    noDistributionData: '今日の集中セッションはまだありません。',
+    focusDistribution: '集中時間分布',
+    noDistributionData: '表示する集中セッションはありません。',
     noTask: 'タスクなし',
   },
   settings: {
