@@ -4,6 +4,8 @@
 
 MyTask is a Pomodoro-based personal task management app. Users break work into focused intervals ("pomodoros"), track progress per task per day, and review history through charts and session logs. The app is designed for both mobile and desktop use.
 
+All date values (task date, session date, "today" comparisons, weekly/monthly chart ranges) use the **browser's local timezone**, not UTC. A task created or a session recorded at 9 AM in Tokyo is assigned the local date April 2, not the UTC date April 1.
+
 ---
 
 ## 2. Authentication
