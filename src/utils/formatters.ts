@@ -1,9 +1,17 @@
+/** Returns YYYY-MM-DD for the given date in the browser's local timezone. */
+function localDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDateStr(new Date());
 }
 
 export function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  return localDateStr(date);
 }
 
 export function getLast7Days(): string[] {
