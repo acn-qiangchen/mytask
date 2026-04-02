@@ -243,7 +243,18 @@ MyTask is a Pomodoro-based personal task management app. Users break work into f
 | DAT-9 | If a DynamoDB operation fails for any reason after retry, the failure is logged silently; the app continues using local state.                                                                                                                                      |
 
 
-### 8.3 Manual Sync
+### 8.3 Cross-Device Timer Sync
+
+
+| ID     | Requirement                                                                                                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DAT-13 | Timer state (running/paused, mode, end time, active task, session count) is saved to DynamoDB immediately on every timer action (start, pause, reset, mode switch, task switch, session complete). |
+| DAT-14 | On app load, timer state is loaded from DynamoDB and restored if a session is still active (end time in the future). Mode, active task, and session count are always restored from the remote state when it is newer. |
+| DAT-15 | Timer state is polled from DynamoDB every 8 seconds. If the remote state has a newer `updatedAt`, the local timer is updated to match (≤10 second propagation delay across devices). |
+| DAT-16 | Conflict resolution uses last-writer-wins: a timer action on the current device always takes precedence over a same-age or older remote state. The device's own writes are never re-applied as remote changes. |
+
+
+### 8.4 Manual Sync
 
 
 | ID     | Requirement                                                                                                                       |

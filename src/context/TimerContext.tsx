@@ -3,6 +3,9 @@ import type { Session } from '../types';
 import { useApp } from '../hooks/useApp';
 import { todayStr } from '../utils/formatters';
 import { playModeSound } from '../utils/sounds';
+import { loadTimerState, saveTimerState } from '../utils/timerSync';
+import type { TimerSyncState } from '../utils/timerSync';
+import { logSync } from '../utils/syncLog';
 
 export type TimerMode = 'focus' | 'short_break' | 'long_break';
 
@@ -57,6 +60,15 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   runningRef.current = running;
   secondsLeftRef.current = secondsLeft;
 
+  /**
+   * Tracks the highest `updatedAt` we have either written ourselves or applied
+   * from remote. Used for last-writer-wins conflict resolution:
+   * - Set synchronously before each DynamoDB write (prevents applying own echo on next poll)
+   * - Set when applying remote state (prevents re-applying same state repeatedly)
+   * - Apply remote only if remote.updatedAt > lastKnownUpdatedAt.current
+   */
+  const lastKnownUpdatedAt = useRef<string>('');
+
   // Reset timer when settings/mode change, but only if not running
   useEffect(() => {
     if (!runningRef.current) {
@@ -91,6 +103,85 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }, 500);
   }, []);
 
+  /**
+   * Fire-and-forget: set lastKnownUpdatedAt synchronously before the async write
+   * so that the next poll won't re-apply our own echoed state.
+   */
+  const pushTimerState = useCallback((
+    isRunning: boolean,
+    mode: TimerMode,
+    endTime: number | null,
+    activeTaskId: string | null,
+    sessionCount: number,
+  ) => {
+    const updatedAt = new Date().toISOString();
+    lastKnownUpdatedAt.current = updatedAt;
+    const syncState: TimerSyncState = { isRunning, mode, endTime, activeTaskId, sessionCount, updatedAt };
+    saveTimerState(syncState); // intentionally not awaited
+    logSync('timerSync:push', `running=${isRunning} mode=${mode} endTime=${endTime} updatedAt=${updatedAt}`);
+  }, []);
+
+  /**
+   * Apply a remote timer state from another device.
+   * If the session is still running (endTime in the future), reconstruct the
+   * running timer. Otherwise restore mode/task/sessionCount in idle state.
+   *
+   * NOTE: If both devices have the same session open and it completes naturally
+   * on both, each will record a session entry. Those get union-merged in
+   * mergeStates by session ID, but will still appear as two separate entries
+   * (double-counting). This is a known limitation for the multi-device scenario.
+   */
+  const applyRemoteTimerState = useCallback((remote: TimerSyncState) => {
+    lastKnownUpdatedAt.current = remote.updatedAt;
+    logSync('timerSync:apply', `running=${remote.isRunning} mode=${remote.mode} endTime=${remote.endTime} updatedAt=${remote.updatedAt}`);
+
+    clearTimer();
+    setModeState(remote.mode);
+    setSessionCount(remote.sessionCount);
+    setActiveTaskId(remote.activeTaskId);
+
+    if (remote.isRunning && remote.endTime !== null && remote.endTime > Date.now()) {
+      const remaining = Math.round((remote.endTime - Date.now()) / 1000);
+      setSecondsLeft(remaining);
+      setRunning(true);
+      startTicking(remote.endTime);
+    } else {
+      // Session ended or is paused — show idle state for the current mode.
+      // Do NOT call onSessionComplete here: the originating device already
+      // recorded the session and incremented the pomodoro counter.
+      setRunning(false);
+      setSecondsLeft(durationFor(remote.mode));
+    }
+  }, [clearTimer, startTicking, durationFor]);
+
+  // On mount: restore timer state from DynamoDB so opening the app on a second
+  // device picks up a session already running on the first device.
+  useEffect(() => {
+    loadTimerState().then((remote) => {
+      if (remote && remote.updatedAt > lastKnownUpdatedAt.current) {
+        applyRemoteTimerState(remote);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount only
+
+  // Poll every 8 seconds so manual actions on one device (pause, mode switch,
+  // task switch) appear on another device within the 10-second tolerance
+  // specified in the acceptance criteria.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const remote = await loadTimerState();
+        if (remote && remote.updatedAt > lastKnownUpdatedAt.current) {
+          applyRemoteTimerState(remote);
+        }
+      } catch {
+        // Silently ignore network errors during polling
+      }
+    }, 8000);
+    return () => clearInterval(id);
+  }, [applyRemoteTimerState]);
+
   const onSessionComplete = useCallback(() => {
     clearTimer();
     setRunning(false);
@@ -113,15 +204,19 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
       const nextMode: TimerMode =
         newCount % settings.longBreakInterval === 0 ? 'long_break' : 'short_break';
-      setModeState(nextMode);
       const nextSecs = durationFor(nextMode);
+      setModeState(nextMode);
       setSecondsLeft(nextSecs);
 
       if (settings.autoStartBreaks) {
         playModeSound(nextMode, settings.soundEnabled);
         startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + nextSecs * 1000);
+        const nextEndTime = Date.now() + nextSecs * 1000;
+        startTicking(nextEndTime);
         setRunning(true);
+        pushTimerState(true, nextMode, nextEndTime, activeTaskId, newCount);
+      } else {
+        pushTimerState(false, nextMode, null, activeTaskId, newCount);
       }
     } else {
       addSession({
@@ -141,11 +236,15 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       if (settings.autoStartPomodoros) {
         playModeSound('focus', settings.soundEnabled);
         startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + focusSecs * 1000);
+        const nextEndTime = Date.now() + focusSecs * 1000;
+        startTicking(nextEndTime);
         setRunning(true);
+        pushTimerState(true, 'focus', nextEndTime, activeTaskId, sessionCount);
+      } else {
+        pushTimerState(false, 'focus', null, activeTaskId, sessionCount);
       }
     }
-  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking]);
+  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking, pushTimerState]);
 
   useEffect(() => {
     if (!running) return;
@@ -157,20 +256,24 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     if (mode === 'focus' && !activeTaskId) return; // require a task for focus sessions
     playModeSound(mode, settings.soundEnabled);
     startTimeRef.current = new Date().toISOString();
-    startTicking(Date.now() + secondsLeftRef.current * 1000);
+    const endTime = Date.now() + secondsLeftRef.current * 1000;
+    startTicking(endTime);
     setRunning(true);
-  }, [startTicking, mode, activeTaskId, settings.soundEnabled]);
+    pushTimerState(true, mode, endTime, activeTaskId, sessionCount);
+  }, [startTicking, mode, activeTaskId, settings.soundEnabled, sessionCount, pushTimerState]);
 
   const pause = useCallback(() => {
     clearTimer();
     setRunning(false);
-  }, [clearTimer]);
+    pushTimerState(false, mode, null, activeTaskId, sessionCount);
+  }, [clearTimer, mode, activeTaskId, sessionCount, pushTimerState]);
 
   const reset = useCallback(() => {
     clearTimer();
     setRunning(false);
     setSecondsLeft(durationFor(mode));
-  }, [clearTimer, durationFor, mode]);
+    pushTimerState(false, mode, null, activeTaskId, sessionCount);
+  }, [clearTimer, durationFor, mode, activeTaskId, sessionCount, pushTimerState]);
 
   const forceComplete = useCallback(() => {
     clearTimer();
@@ -204,8 +307,12 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
       if (settings.autoStartBreaks) {
         startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + nextSecs * 1000);
+        const nextEndTime = Date.now() + nextSecs * 1000;
+        startTicking(nextEndTime);
         setRunning(true);
+        pushTimerState(true, nextMode, nextEndTime, activeTaskId, newCount);
+      } else {
+        pushTimerState(false, nextMode, null, activeTaskId, newCount);
       }
     } else {
       addSession({
@@ -225,22 +332,31 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       if (settings.autoStartPomodoros) {
         playModeSound('focus', settings.soundEnabled);
         startTimeRef.current = new Date().toISOString();
-        startTicking(Date.now() + focusSecs * 1000);
+        const nextEndTime = Date.now() + focusSecs * 1000;
+        startTicking(nextEndTime);
         setRunning(true);
+        pushTimerState(true, 'focus', nextEndTime, activeTaskId, sessionCount);
+      } else {
+        pushTimerState(false, 'focus', null, activeTaskId, sessionCount);
       }
     }
-  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking]);
+  }, [mode, sessionCount, activeTaskId, settings, addSession, incrementTaskPomodoro, clearTimer, durationFor, startTicking, pushTimerState]);
 
   const switchMode = useCallback((newMode: TimerMode) => {
     clearTimer();
     setRunning(false);
     setModeState(newMode);
     setSecondsLeft(durationFor(newMode));
-  }, [clearTimer, durationFor]);
+    pushTimerState(false, newMode, null, activeTaskId, sessionCount);
+  }, [clearTimer, durationFor, activeTaskId, sessionCount, pushTimerState]);
 
   const switchTask = useCallback((taskId: string | null) => {
     setActiveTaskId(taskId);
-  }, []);
+    // Push immediately so the other device shows the updated active task
+    if (runningRef.current) {
+      pushTimerState(true, mode, endTimeRef.current, taskId, sessionCount);
+    }
+  }, [mode, sessionCount, pushTimerState]);
 
   useEffect(() => () => clearTimer(), [clearTimer]);
 
