@@ -10,8 +10,8 @@ import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes, format
 export function ReportsPage() {
   const { state } = useApp();
   const { t } = useLang();
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(() => todayStr());
+  const [toDate, setToDate] = useState(() => todayStr());
   const [barChartSpan, setBarChartSpan] = useState<'weekly' | 'monthly'>('weekly');
 
   const today = todayStr();

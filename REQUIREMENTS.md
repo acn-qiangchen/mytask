@@ -179,7 +179,7 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | RPT-9  | The reports page shows a filterable history table of completed and archived tasks.                            |
 | RPT-10 | Each row shows: title, pomodoro count (completed/estimated), started timestamp, completed/archived timestamp. |
 | RPT-11 | Archived tasks are shown at 50% opacity to distinguish them from completed tasks.                             |
-| RPT-12 | A date range filter (From / To) placed above the focus distribution chart applies to **both** the focus distribution chart and the task history table. |
+| RPT-12 | A date range filter (From / To) placed above the focus distribution chart applies to **both** the focus distribution chart and the task history table. Both pickers default to today so only the current day's data is shown on first open. |
 | RPT-13 | A clear-filter button (✕) removes the date filter when a range is active.                                                                             |
 | RPT-14 | If no task history exists for the selected range, a "No task history" message is shown.                       |
 
