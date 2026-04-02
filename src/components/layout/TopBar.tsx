@@ -37,6 +37,7 @@ export function TopBar() {
         </nav>
       </div>
       <div className="flex items-center gap-3 text-sm">
+        <span className="text-gray-500 text-xs font-mono" title="Build date">{__BUILD_DATE__}</span>
         {syncing && <span className="text-gray-400 text-xs">{t.auth.syncing}</span>}
         <button
           onClick={signOut}

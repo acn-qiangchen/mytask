@@ -290,6 +290,7 @@ MyTask is a Pomodoro-based personal task management app. Users break work into f
 | NAV-1 | The app has four pages: **Timer** (`/`), **Reports** (`/reports`), **Settings** (`/settings`), **Debug** (`/debug`). |
 | NAV-2 | The top navigation bar is always visible and shows the current active page with a highlight.                         |
 | NAV-3 | Navigation uses hash-based routing (`#/`, `#/reports`, etc.) for GitHub Pages compatibility.                         |
+| NAV-4 | The top navigation bar displays the build date (YYYY-MM-DD) as a small label, allowing users to verify they are running the latest deployed version.                                             |
 
 
 ---
