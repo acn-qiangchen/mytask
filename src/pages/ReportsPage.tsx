@@ -88,6 +88,16 @@ export function ReportsPage() {
     });
   }, [taskHistory, fromDate, toDate]);
 
+  const filteredInterruptions = useMemo(() => {
+    return (state.interruptions ?? [])
+      .filter(i => {
+        if (fromDate && i.date < fromDate) return false;
+        if (toDate && i.date > toDate) return false;
+        return true;
+      })
+      .sort((a, b) => b.pausedAt.localeCompare(a.pausedAt));
+  }, [state.interruptions, fromDate, toDate]);
+
   const barData = barChartSpan === 'weekly' ? weeklyData : monthlyData;
   const xAxisFontSize = barChartSpan === 'monthly' ? 9 : 11;
   const xAxisInterval = barChartSpan === 'monthly' ? 4 : undefined;
@@ -213,6 +223,41 @@ export function ReportsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Interruptions */}
+        <div className="bg-gray-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+            {t.reports.interruptions}
+          </h2>
+          {filteredInterruptions.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">{t.reports.noInterruptions}</p>
+          ) : (
+            <div className="space-y-3">
+              {filteredInterruptions.map(interruption => {
+                const task = interruption.taskId
+                  ? state.tasks.find(tsk => tsk.id === interruption.taskId)
+                  : null;
+                return (
+                  <div key={interruption.id} className="border-l-2 border-yellow-500/40 pl-3 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm text-white">
+                        {interruption.reason || t.reports.noReason}
+                      </span>
+                      <span className="text-xs text-yellow-400 shrink-0">
+                        {formatDateTime(interruption.pausedAt)}
+                      </span>
+                    </div>
+                    {task && (
+                      <div className="text-xs text-gray-500">
+                        🍅 {task.title}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

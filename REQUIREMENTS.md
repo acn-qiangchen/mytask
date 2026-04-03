@@ -80,6 +80,8 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | TMR-22 | When a task is selected for focus, it is highlighted in the task list.                                                                                                 |
 | TMR-23 | Clicking another pending task while the timer is running shows a confirmation dialog before switching.                                                                 |
 | TMR-24 | If the currently focused task is marked complete while the timer is running, the timer pauses and the task is deselected.                                              |
+| TMR-27 | When the user clicks Pause, a **Pause Reason modal** appears with preset reason chips (Meeting, Phone call, Bathroom, Distracted, Break, Other) and a free-text input. The chip selection and text input are mutually exclusive. |
+| TMR-28 | In the Pause Reason modal: confirming with a reason or "Pause without reason" records an `Interruption` entry and pauses the timer. Dismissing the modal (backdrop click) does NOT pause the timer. |
 | TMR-25 | When a Focus session completes (or is force-completed), the `completedPomodoros` counter on the selected task is incremented by 1, provided the task is still pending. |
 | TMR-26 | A session counter on the timer page shows the number of focus sessions completed since the app loaded (e.g. "#3").                                                     |
 
@@ -182,6 +184,8 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | RPT-12 | A date range filter (From / To) placed above the focus distribution chart applies to **both** the focus distribution chart and the task history table. Both pickers default to today so only the current day's data is shown on first open. |
 | RPT-13 | A clear-filter button (✕) removes the date filter when a range is active.                                                                             |
 | RPT-14 | If no task history exists for the selected range, a "No task history" message is shown.                       |
+| RPT-15 | The reports page shows an **Interruptions** section filtered by the same date range as task history. Each row shows the reason (or "(no reason given)"), the timestamp, and the linked task name if available. |
+| RPT-16 | If no interruptions exist for the selected range, a "No interruptions for this period" message is shown. |
 
 
 ---

@@ -13,6 +13,7 @@ export function defaultAppState(): AppState {
   return {
     tasks: [],
     sessions: [],
+    interruptions: [],
     settings: { ...DEFAULT_SETTINGS },
     selectedDate: todayStr(),
     updatedAt: new Date(0).toISOString(), // epoch — always loses to real data in mergeStates
@@ -39,10 +40,15 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
     `local.updatedAt=${local.updatedAt ?? 'none'} remote.updatedAt=${remote.updatedAt ?? 'none'}`
   );
 
+  const primaryInterruptions = primary.interruptions ?? [];
+  const secondaryInterruptions = secondary.interruptions ?? [];
+  const interruptionIds = new Set(primaryInterruptions.map(i => i.id));
+
   return {
     ...primary,
     tasks: [...primary.tasks, ...mergedFromSecondary],
     sessions: [...primary.sessions, ...secondary.sessions.filter(s => !sessionIds.has(s.id))],
+    interruptions: [...primaryInterruptions, ...secondaryInterruptions.filter(i => !interruptionIds.has(i.id))],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -51,7 +57,10 @@ export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STATE_KEY);
     if (!raw) return defaultAppState();
-    return JSON.parse(raw) as AppState;
+    const parsed = JSON.parse(raw) as AppState;
+    // Backward compat: older stored states won't have interruptions
+    if (!parsed.interruptions) parsed.interruptions = [];
+    return parsed;
   } catch {
     return defaultAppState();
   }
