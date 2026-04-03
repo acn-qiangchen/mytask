@@ -1,5 +1,5 @@
 import React, { createContext, useReducer, useEffect, useRef, useState } from 'react';
-import type { AppState, Task, Session, Settings } from '../types';
+import type { AppState, Task, Session, Settings, Interruption } from '../types';
 import { appReducer } from './reducer';
 import { loadState, saveState, loadStoredIdentity, saveIdentity, defaultAppState, mergeStates } from '../utils/storage';
 import { loadFromDynamo, saveToDynamo } from '../utils/dynamoSync';
@@ -14,6 +14,7 @@ interface AppContextValue {
   deleteTask: (id: string) => void;
   clearCompletedTasks: (date: string) => void;
   addSession: (s: Session) => void;
+  addInterruption: (i: Interruption) => void;
   incrementTaskPomodoro: (taskId: string) => void;
   updateSettings: (s: Settings) => void;
   setDate: (date: string) => void;
@@ -120,6 +121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteTask: (id) => dispatch({ type: 'DELETE_TASK', payload: id }),
     clearCompletedTasks: (date) => dispatch({ type: 'CLEAR_COMPLETED_TASKS', payload: date }),
     addSession: (s) => dispatch({ type: 'ADD_SESSION', payload: s }),
+    addInterruption: (i) => dispatch({ type: 'ADD_INTERRUPTION', payload: i }),
     incrementTaskPomodoro: (taskId) => dispatch({ type: 'INCREMENT_TASK_POMODORO', payload: taskId }),
     updateSettings: (s) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }),
     setDate: (date) => dispatch({ type: 'SET_DATE', payload: date }),

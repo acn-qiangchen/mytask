@@ -23,6 +23,7 @@ function makeState(tasks: Task[], updatedAt: string): AppState {
   return {
     tasks,
     sessions: [],
+    interruptions: [],
     settings: {
       focusDuration: 25,
       shortBreakDuration: 5,

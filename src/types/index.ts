@@ -22,6 +22,14 @@ export interface Session {
   completed: boolean;
 }
 
+export interface Interruption {
+  id: string;
+  taskId: string | null;
+  date: string;     // YYYY-MM-DD
+  pausedAt: string; // ISO timestamp when the pause occurred
+  reason: string;   // user-selected or typed; empty string if no reason given
+}
+
 export interface Settings {
   focusDuration: number;
   shortBreakDuration: number;
@@ -35,6 +43,7 @@ export interface Settings {
 export interface AppState {
   tasks: Task[];
   sessions: Session[];
+  interruptions: Interruption[];
   settings: Settings;
   selectedDate: string; // YYYY-MM-DD
   updatedAt?: string;   // ISO timestamp — set on every local mutation; used for merge conflict resolution

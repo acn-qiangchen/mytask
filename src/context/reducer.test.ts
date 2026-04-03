@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { appReducer } from './reducer';
-import type { AppState, Task } from '../types';
+import type { AppState, Task, Interruption } from '../types';
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -19,6 +19,7 @@ function makeState(tasks: Task[]): AppState {
   return {
     tasks,
     sessions: [],
+    interruptions: [],
     settings: {
       focusDuration: 25,
       shortBreakDuration: 5,
@@ -80,5 +81,40 @@ describe('REORDER_TASKS', () => {
     const state = makeState([task]);
     const next = appReducer(state, { type: 'SET_DATE', payload: '2026-02-01' });
     expect(next.tasks.find(t => t.id === 'a')?.order).toBeUndefined();
+  });
+});
+
+describe('ADD_INTERRUPTION', () => {
+  function makeInterruption(overrides: Partial<Interruption> = {}): Interruption {
+    return {
+      id: 'int-1',
+      taskId: null,
+      date: '2026-01-01',
+      pausedAt: '2026-01-01T10:00:00.000Z',
+      reason: 'Meeting',
+      ...overrides,
+    };
+  }
+
+  it('appends the interruption to the state', () => {
+    const state = makeState([]);
+    const interruption = makeInterruption();
+    const next = appReducer(state, { type: 'ADD_INTERRUPTION', payload: interruption });
+    expect(next.interruptions).toHaveLength(1);
+    expect(next.interruptions[0]).toEqual(interruption);
+  });
+
+  it('preserves existing interruptions', () => {
+    const existing = makeInterruption({ id: 'int-0' });
+    const state = { ...makeState([]), interruptions: [existing] };
+    const next = appReducer(state, { type: 'ADD_INTERRUPTION', payload: makeInterruption({ id: 'int-1' }) });
+    expect(next.interruptions).toHaveLength(2);
+    expect(next.interruptions[0].id).toBe('int-0');
+  });
+
+  it('sets updatedAt on the resulting state', () => {
+    const state = makeState([]);
+    const next = appReducer(state, { type: 'ADD_INTERRUPTION', payload: makeInterruption() });
+    expect(next.updatedAt).toBeDefined();
   });
 });

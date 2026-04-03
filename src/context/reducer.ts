@@ -1,4 +1,4 @@
-import type { AppState, Task, Session, Settings } from '../types';
+import type { AppState, Task, Session, Settings, Interruption } from '../types';
 
 export type Action =
   | { type: 'LOAD_STATE'; payload: AppState }
@@ -7,6 +7,7 @@ export type Action =
   | { type: 'DELETE_TASK'; payload: string }
   | { type: 'CLEAR_COMPLETED_TASKS'; payload: string }  // payload = date string
   | { type: 'ADD_SESSION'; payload: Session }
+  | { type: 'ADD_INTERRUPTION'; payload: Interruption }
   | { type: 'INCREMENT_TASK_POMODORO'; payload: string }
   | { type: 'UPDATE_SETTINGS'; payload: Settings }
   | { type: 'SET_DATE'; payload: string }
@@ -43,6 +44,9 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case 'ADD_SESSION':
       return { ...state, sessions: [...state.sessions, action.payload], updatedAt: new Date().toISOString() };
+
+    case 'ADD_INTERRUPTION':
+      return { ...state, interruptions: [...(state.interruptions ?? []), action.payload], updatedAt: new Date().toISOString() };
 
     case 'INCREMENT_TASK_POMODORO':
       return {

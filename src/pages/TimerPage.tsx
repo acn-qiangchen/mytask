@@ -12,6 +12,7 @@ import { TimerControls } from '../components/timer/TimerControls';
 import { AddTaskForm } from '../components/tasks/AddTaskForm';
 import { TaskItem } from '../components/tasks/TaskItem';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
+import { PauseReasonModal } from '../components/shared/PauseReasonModal';
 import { SyncButton } from '../components/shared/SyncButton';
 import { PullToRefresh } from '../components/shared/PullToRefresh';
 import { todayStr } from '../utils/formatters';
@@ -50,9 +51,10 @@ interface PendingConfirm {
 
 export function TimerPage() {
   const timer = useTimer();
-  const { state, clearCompletedTasks, manualSync, reorderTasks } = useApp();
+  const { state, addInterruption, clearCompletedTasks, manualSync, reorderTasks } = useApp();
   const { t } = useLang();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const [showPauseModal, setShowPauseModal] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
@@ -95,6 +97,22 @@ export function TimerPage() {
     const newIndex = pendingTasks.findIndex(t => t.id === over.id);
     const reordered = arrayMove(pendingTasks, oldIndex, newIndex);
     reorderTasks(reordered.map(t => t.id));
+  }
+
+  function handlePause() {
+    setShowPauseModal(true);
+  }
+
+  function handlePauseConfirm(reason: string) {
+    addInterruption({
+      id: Math.random().toString(36).slice(2, 10),
+      taskId: timer.activeTaskId,
+      date: todayStr(),
+      pausedAt: new Date().toISOString(),
+      reason,
+    });
+    timer.pause();
+    setShowPauseModal(false);
   }
 
   function handleSwitchMode(newMode: TimerMode) {
@@ -147,7 +165,7 @@ export function TimerPage() {
             hasActiveTask={timer.activeTaskId !== null}
             mode={timer.mode}
             onStart={timer.start}
-            onPause={timer.pause}
+            onPause={handlePause}
             onReset={timer.reset}
             onForceComplete={timer.forceComplete}
           />
@@ -225,6 +243,12 @@ export function TimerPage() {
           cancelLabel={t.shared.cancel}
           onConfirm={pendingConfirm.onConfirm}
           onCancel={() => setPendingConfirm(null)}
+        />
+      )}
+      {showPauseModal && (
+        <PauseReasonModal
+          onConfirm={handlePauseConfirm}
+          onCancel={() => setShowPauseModal(false)}
         />
       )}
     </div>

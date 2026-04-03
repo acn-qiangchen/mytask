@@ -52,6 +52,7 @@ function makeState(taskCount = 2): AppState {
       createdAt: '2026-01-01T00:00:00.000Z',
     })),
     sessions: [],
+    interruptions: [],
     settings: {
       focusDuration: 25,
       shortBreakDuration: 5,
