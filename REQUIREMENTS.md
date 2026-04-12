@@ -354,5 +354,6 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | VER-3 | Multiple releases on the same day are distinguished by incrementing the patch number (e.g. `v1.0.1` → `v1.0.2`).                                    |
 | VER-4 | Every release must have a corresponding GitHub release tag. The release workflow (`.github/workflows/release.yml`) creates this automatically on each `main` push when the version is new. |
 | VER-5 | A `CHANGELOG.md` entry must be added for every release, documenting new features, bug fixes, and breaking changes.                                   |
+| VER-6 | The changelog CI check (`.github/workflows/changelog-check.yml`) enforces VER-5: a PR that bumps the version in `package.json` will fail the check if `CHANGELOG.md` is not also updated. |
 
 

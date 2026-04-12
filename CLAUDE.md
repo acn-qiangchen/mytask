@@ -85,8 +85,9 @@ Do not merge a feature PR without a corresponding `REQUIREMENTS.md` update.
 A GitHub release tag is **required** for every release. The release workflow automates this:
 
 1. Bump `version` in `package.json` (e.g. `1.0.0` → `1.0.1`) as part of the feature/fix PR.
-2. Merge to `main` — `.github/workflows/release.yml` automatically creates the Git tag and GitHub release using the new version, with auto-generated release notes.
-3. A release is **not considered complete** until a GitHub release tag exists for that version.
+2. Add a `CHANGELOG.md` entry for the new version — the PR check (`.github/workflows/changelog-check.yml`) **blocks merge** if the version was bumped but `CHANGELOG.md` was not updated.
+3. Merge to `main` — `.github/workflows/release.yml` automatically creates the Git tag and GitHub release using the new version, with auto-generated release notes.
+4. A release is **not considered complete** until a GitHub release tag exists for that version.
 
 To distinguish multiple releases on the same day, increment the patch segment (`1.0.1`, `1.0.2`, …).
 
