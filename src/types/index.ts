@@ -1,3 +1,10 @@
+export interface Ticket {
+  id: string;
+  number: string;      // user-defined label, e.g. "JIRA-123" or "001"
+  description: string;
+  createdAt: string;   // ISO timestamp
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -7,6 +14,7 @@ export interface Task {
   completed: boolean;
   note?: string;
   order?: number;
+  ticketId?: string;   // optional link to a registered Ticket
   createdAt: string;
   completedAt?: string;  // ISO timestamp — set when task is marked complete
   archivedAt?: string;   // ISO timestamp — set when task is cleared from the day view
@@ -44,6 +52,7 @@ export interface AppState {
   tasks: Task[];
   sessions: Session[];
   interruptions: Interruption[];
+  tickets: Ticket[];
   settings: Settings;
   selectedDate: string; // YYYY-MM-DD
   updatedAt?: string;   // ISO timestamp — set on every local mutation; used for merge conflict resolution

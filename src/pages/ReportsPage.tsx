@@ -14,6 +14,7 @@ export function ReportsPage() {
   const [fromDate, setFromDate] = useState(() => todayStr());
   const [toDate, setToDate] = useState(() => todayStr());
   const [barChartSpan, setBarChartSpan] = useState<'weekly' | 'monthly'>('weekly');
+  const [focusGroupBy, setFocusGroupBy] = useState<'task' | 'ticket'>('task');
 
   const today = todayStr();
   const focusSessions = state.sessions.filter(s => s.type === 'focus' && s.completed);
@@ -59,17 +60,28 @@ export function ReportsPage() {
       return s.date === today;
     });
     if (sessions.length === 0) return [];
-    const byTask: Record<string, { title: string; minutes: number }> = {};
+    const tickets = state.tickets ?? [];
+    const byGroup: Record<string, { title: string; minutes: number }> = {};
     for (const s of sessions) {
-      const key = s.taskId ?? '__none__';
-      if (!byTask[key]) {
+      let key: string;
+      let groupTitle: string;
+      if (focusGroupBy === 'ticket') {
         const task = s.taskId ? state.tasks.find(tsk => tsk.id === s.taskId) : null;
-        byTask[key] = { title: task?.title ?? t.reports.noTask, minutes: 0 };
+        const ticket = task?.ticketId ? tickets.find(tk => tk.id === task.ticketId) : null;
+        key = ticket?.id ?? '__none__';
+        groupTitle = ticket ? `${ticket.number}${ticket.description ? ` — ${ticket.description}` : ''}` : t.reports.noTicket;
+      } else {
+        key = s.taskId ?? '__none__';
+        const task = s.taskId ? state.tasks.find(tsk => tsk.id === s.taskId) : null;
+        groupTitle = task?.title ?? t.reports.noTask;
       }
-      byTask[key].minutes += s.duration;
+      if (!byGroup[key]) {
+        byGroup[key] = { title: groupTitle, minutes: 0 };
+      }
+      byGroup[key].minutes += s.duration;
     }
-    return Object.entries(byTask).map(([, v]) => v);
-  }, [focusSessions, state.tasks, today, fromDate, toDate, t.reports.noTask]);
+    return Object.entries(byGroup).map(([, v]) => v);
+  }, [focusSessions, state.tasks, state.tickets, today, fromDate, toDate, focusGroupBy, t.reports.noTask, t.reports.noTicket]);
 
   const taskHistory = useMemo(() => {
     return state.tasks
@@ -191,6 +203,10 @@ export function ReportsPage() {
           data={pieData}
           title={t.reports.focusDistribution}
           noDataLabel={t.reports.noDistributionData}
+          focusGroupBy={focusGroupBy}
+          onGroupByChange={setFocusGroupBy}
+          byTaskLabel={t.reports.byTask}
+          byTicketLabel={t.reports.byTicket}
         />
 
         {/* Task history (filtered by the same date range) */}
@@ -271,17 +287,41 @@ const PIE_COLORS = [
 
 interface PieEntry { title: string; minutes: number }
 
-function FocusDistributionChart({ data, title, noDataLabel }: {
+function FocusDistributionChart({ data, title, noDataLabel, focusGroupBy, onGroupByChange, byTaskLabel, byTicketLabel }: {
   data: PieEntry[];
   title: string;
   noDataLabel: string;
+  focusGroupBy: 'task' | 'ticket';
+  onGroupByChange: (v: 'task' | 'ticket') => void;
+  byTaskLabel: string;
+  byTicketLabel: string;
 }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const total = data.reduce((sum, d) => sum + d.minutes, 0);
 
   return (
     <div className="bg-gray-800 rounded-xl p-5">
-      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{title}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">{title}</h2>
+        <div className="flex rounded-lg overflow-hidden border border-gray-700 text-xs font-medium">
+          <button
+            onClick={() => onGroupByChange('task')}
+            className={`px-3 py-1 transition-colors ${
+              focusGroupBy === 'task' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
+          >
+            {byTaskLabel}
+          </button>
+          <button
+            onClick={() => onGroupByChange('ticket')}
+            className={`px-3 py-1 transition-colors border-l border-gray-700 ${
+              focusGroupBy === 'ticket' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
+          >
+            {byTicketLabel}
+          </button>
+        </div>
+      </div>
       {data.length === 0 ? (
         <p className="text-gray-500 text-sm text-center py-4">{noDataLabel}</p>
       ) : (

@@ -1,5 +1,5 @@
 import React, { createContext, useReducer, useEffect, useRef, useState } from 'react';
-import type { AppState, Task, Session, Settings, Interruption } from '../types';
+import type { AppState, Task, Session, Settings, Interruption, Ticket } from '../types';
 import { appReducer } from './reducer';
 import { loadState, saveState, loadStoredIdentity, saveIdentity, defaultAppState, mergeStates } from '../utils/storage';
 import { loadFromDynamo, saveToDynamo } from '../utils/dynamoSync';
@@ -19,6 +19,9 @@ interface AppContextValue {
   updateSettings: (s: Settings) => void;
   setDate: (date: string) => void;
   reorderTasks: (orderedIds: string[]) => void;
+  addTicket: (t: Ticket) => void;
+  updateTicket: (t: Ticket) => void;
+  deleteTicket: (id: string) => void;
 }
 
 export const AppContext = createContext<AppContextValue | null>(null);
@@ -126,6 +129,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateSettings: (s) => dispatch({ type: 'UPDATE_SETTINGS', payload: s }),
     setDate: (date) => dispatch({ type: 'SET_DATE', payload: date }),
     reorderTasks: (orderedIds) => dispatch({ type: 'REORDER_TASKS', payload: orderedIds }),
+    addTicket: (t) => dispatch({ type: 'ADD_TICKET', payload: t }),
+    updateTicket: (t) => dispatch({ type: 'UPDATE_TICKET', payload: t }),
+    deleteTicket: (id) => dispatch({ type: 'DELETE_TICKET', payload: id }),
   };
 
   return <AppContext.Provider value={ctx}>{children}</AppContext.Provider>;

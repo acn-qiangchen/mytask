@@ -14,6 +14,7 @@ export function defaultAppState(): AppState {
     tasks: [],
     sessions: [],
     interruptions: [],
+    tickets: [],
     settings: { ...DEFAULT_SETTINGS },
     selectedDate: todayStr(),
     updatedAt: new Date(0).toISOString(), // epoch — always loses to real data in mergeStates
@@ -44,11 +45,16 @@ export function mergeStates(local: AppState, remote: AppState): AppState {
   const secondaryInterruptions = secondary.interruptions ?? [];
   const interruptionIds = new Set(primaryInterruptions.map(i => i.id));
 
+  const primaryTickets = primary.tickets ?? [];
+  const secondaryTickets = secondary.tickets ?? [];
+  const ticketIds = new Set(primaryTickets.map(tk => tk.id));
+
   return {
     ...primary,
     tasks: [...primary.tasks, ...mergedFromSecondary],
     sessions: [...primary.sessions, ...secondary.sessions.filter(s => !sessionIds.has(s.id))],
     interruptions: [...primaryInterruptions, ...secondaryInterruptions.filter(i => !interruptionIds.has(i.id))],
+    tickets: [...primaryTickets, ...secondaryTickets.filter(tk => !ticketIds.has(tk.id))],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -58,8 +64,9 @@ export function loadState(): AppState {
     const raw = localStorage.getItem(STATE_KEY);
     if (!raw) return defaultAppState();
     const parsed = JSON.parse(raw) as AppState;
-    // Backward compat: older stored states won't have interruptions
+    // Backward compat: older stored states won't have interruptions or tickets
     if (!parsed.interruptions) parsed.interruptions = [];
+    if (!parsed.tickets) parsed.tickets = [];
     return parsed;
   } catch {
     return defaultAppState();

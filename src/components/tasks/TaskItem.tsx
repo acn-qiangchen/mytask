@@ -5,6 +5,7 @@ import type { Task } from '../../types';
 import { useApp } from '../../hooks/useApp';
 import { useLang } from '../../hooks/useLang';
 import { shortDate } from '../../utils/formatters';
+import { Link } from 'react-router-dom';
 
 interface Props {
   task: Task;
@@ -16,16 +17,19 @@ interface Props {
 }
 
 export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHandleListeners, dragHandleAttributes }: Props) {
-  const { updateTask, deleteTask } = useApp();
+  const { state, updateTask, deleteTask } = useApp();
   const { t } = useLang();
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPomodoros, setEditPomodoros] = useState(task.estimatedPomodoros);
+  const [editTicketId, setEditTicketId] = useState(task.ticketId ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const tickets = state.tickets ?? [];
 
   function saveEdit() {
     if (!editTitle.trim()) return;
-    updateTask({ ...task, title: editTitle.trim(), estimatedPomodoros: editPomodoros });
+    updateTask({ ...task, title: editTitle.trim(), estimatedPomodoros: editPomodoros, ticketId: editTicketId || undefined });
     setEditing(false);
   }
 
@@ -65,6 +69,22 @@ export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHand
           <span className="text-white text-sm w-4 text-center">{editPomodoros}</span>
           <button onClick={() => setEditPomodoros(p => Math.min(20, p + 1))} className="w-6 h-6 rounded bg-white/10 text-white text-xs hover:bg-white/20">+</button>
         </div>
+        {tickets.length > 0 ? (
+          <select
+            value={editTicketId}
+            onChange={e => setEditTicketId(e.target.value)}
+            className="w-full px-2 py-1 rounded bg-white/10 text-white text-sm border border-white/20 focus:outline-none focus:border-white/50"
+          >
+            <option value="">{t.tasks.noTicket}</option>
+            {tickets.map(tk => (
+              <option key={tk.id} value={tk.id}>{tk.number}{tk.description ? ` — ${tk.description}` : ''}</option>
+            ))}
+          </select>
+        ) : (
+          <p className="text-white/40 text-xs">
+            {t.tasks.selectTicket} — <Link to="/tickets" className="underline">{t.nav.tickets}</Link>
+          </p>
+        )}
         <div className="flex gap-2">
           <button onClick={saveEdit} className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-xs text-white font-medium">{t.tasks.btnSave}</button>
           <button onClick={() => setEditing(false)} className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white">{t.tasks.btnCancel}</button>
@@ -120,6 +140,14 @@ export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHand
             {shortDate(task.date)}
           </span>
         )}
+        {task.ticketId && (() => {
+          const ticket = tickets.find(tk => tk.id === task.ticketId);
+          return ticket ? (
+            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300 shrink-0">
+              {ticket.number}
+            </span>
+          ) : null;
+        })()}
       </span>
 
       <div className="flex items-center gap-1 text-xs text-white/50 shrink-0">

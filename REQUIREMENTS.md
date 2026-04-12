@@ -168,8 +168,8 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | ----- | -------------------------------------------------------------------------------- |
 | RPT-4 | A single **daily focus bar chart** shows focus time (minutes) per day with a **This Week / This Month** toggle to switch between 7-day and 30-day views. |
 | RPT-5 | *(merged into RPT-4)*                                                                                                                                    |
-| RPT-6 | A **focus distribution pie chart** shows focus time broken down by task for the active date range filter (defaults to today when no filter is set).      |
-| RPT-7 | In the pie chart, sessions with no linked task are grouped as "No Task".                                                                                 |
+| RPT-6 | A **focus distribution pie chart** shows focus time broken down by task or ticket for the active date range filter (defaults to today when no filter is set). A **By Task / By Ticket** toggle switches the grouping. |
+| RPT-7 | In the pie chart, sessions with no linked task (or tasks with no ticket in ticket view) are grouped as "No Task" / "No Ticket".                          |
 | RPT-8 | If no focus session data exists, charts are replaced by a "No data yet" message.                                                                         |
 
 
@@ -190,7 +190,23 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 
 ---
 
-## 6. Settings
+## 6. Tickets
+
+
+| ID     | Requirement                                                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TKT-1  | A **Tickets** page (accessible via top navigation) allows users to register named tickets with a ticket number and optional description.          |
+| TKT-2  | Each ticket has a user-defined **ticket number** (e.g. "JIRA-123") and an optional **description**.                                             |
+| TKT-3  | Tickets can be created, edited, and deleted from the Tickets page.                                                                               |
+| TKT-4  | Deleting a ticket unlinks it from all tasks that referenced it; the tasks themselves are not deleted.                                            |
+| TKT-5  | When creating or editing a task, the user can optionally select a registered ticket to link the task to.                                         |
+| TKT-6  | If a task is linked to a ticket, the ticket number is shown as a badge on the task item.                                                         |
+| TKT-7  | On the Reports page, the focus distribution chart has a **By Task / By Ticket** toggle. In "By Ticket" mode, focus time is aggregated per ticket; tasks without a ticket are grouped as "No Ticket". |
+
+
+---
+
+## 7. Settings
 
 
 | ID     | Requirement                                                                                                      |

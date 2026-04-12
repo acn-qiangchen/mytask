@@ -1,4 +1,4 @@
-import type { AppState, Task, Session, Settings, Interruption } from '../types';
+import type { AppState, Task, Session, Settings, Interruption, Ticket } from '../types';
 
 export type Action =
   | { type: 'LOAD_STATE'; payload: AppState }
@@ -11,7 +11,10 @@ export type Action =
   | { type: 'INCREMENT_TASK_POMODORO'; payload: string }
   | { type: 'UPDATE_SETTINGS'; payload: Settings }
   | { type: 'SET_DATE'; payload: string }
-  | { type: 'REORDER_TASKS'; payload: string[] };  // ordered array of task IDs
+  | { type: 'REORDER_TASKS'; payload: string[] }  // ordered array of task IDs
+  | { type: 'ADD_TICKET'; payload: Ticket }
+  | { type: 'UPDATE_TICKET'; payload: Ticket }
+  | { type: 'DELETE_TICKET'; payload: string };  // payload = ticket id
 
 export function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -75,6 +78,25 @@ export function appReducer(state: AppState, action: Action): AppState {
         updatedAt: new Date().toISOString(),
       };
     }
+
+    case 'ADD_TICKET':
+      return { ...state, tickets: [...(state.tickets ?? []), action.payload], updatedAt: new Date().toISOString() };
+
+    case 'UPDATE_TICKET':
+      return {
+        ...state,
+        tickets: (state.tickets ?? []).map(tk => tk.id === action.payload.id ? action.payload : tk),
+        updatedAt: new Date().toISOString(),
+      };
+
+    case 'DELETE_TICKET':
+      return {
+        ...state,
+        tickets: (state.tickets ?? []).filter(tk => tk.id !== action.payload),
+        // clear ticketId from tasks that referenced this ticket
+        tasks: state.tasks.map(t => t.ticketId === action.payload ? { ...t, ticketId: undefined } : t),
+        updatedAt: new Date().toISOString(),
+      };
 
     default:
       return state;

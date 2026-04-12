@@ -53,6 +53,7 @@ function makeState(taskCount = 2): AppState {
     })),
     sessions: [],
     interruptions: [],
+    tickets: [],
     settings: {
       focusDuration: 25,
       shortBreakDuration: 5,

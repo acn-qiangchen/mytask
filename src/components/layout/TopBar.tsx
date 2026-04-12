@@ -12,6 +12,7 @@ export function TopBar() {
   const navLinks = [
     { to: '/', label: t.nav.timer },
     { to: '/reports', label: t.nav.reports },
+    { to: '/tickets', label: t.nav.tickets },
     { to: '/settings', label: t.nav.settings },
     { to: '/debug', label: 'Debug' },
   ];
