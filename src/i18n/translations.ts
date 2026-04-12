@@ -103,6 +103,9 @@ const en = {
     byTask: 'By Task',
     byTicket: 'By Ticket',
     noTicket: 'No Ticket',
+    distractionDistribution: 'Distraction Distribution',
+    noDistractionData: 'No interruptions in this period.',
+    interruptionCount: (n: number) => `${n}×`,
   },
   settings: {
     title: 'Settings',
@@ -240,6 +243,9 @@ const ja: typeof en = {
     byTask: 'タスク別',
     byTicket: 'チケット別',
     noTicket: 'チケットなし',
+    distractionDistribution: '中断分布',
+    noDistractionData: 'この期間の中断はありません。',
+    interruptionCount: (n: number) => `${n}×`,
   },
   settings: {
     title: '設定',

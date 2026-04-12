@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { filterTasksBySessionDates } from './reportFilters';
-import type { Task, Session } from '../types';
+import { filterTasksBySessionDates, groupInterruptionsByReason } from './reportFilters';
+import type { Task, Session, Interruption } from '../types';
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -121,5 +121,79 @@ describe('filterTasksBySessionDates', () => {
     const task = makeTask({ id: 'a' });
     const result = filterTasksBySessionDates([task], [], '2026-02-02', '2026-02-02', '2026-02-02');
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('groupInterruptionsByReason', () => {
+  function makeInterruption(overrides: Partial<Interruption> = {}): Interruption {
+    return {
+      id: 'int-1',
+      taskId: null,
+      date: '2026-02-02',
+      pausedAt: '2026-02-02T10:00:00.000Z',
+      reason: 'Meeting',
+      ...overrides,
+    };
+  }
+
+  it('returns empty array for no interruptions', () => {
+    expect(groupInterruptionsByReason([], '(no reason)')).toHaveLength(0);
+  });
+
+  it('groups interruptions by reason', () => {
+    const interruptions = [
+      makeInterruption({ id: '1', reason: 'Meeting' }),
+      makeInterruption({ id: '2', reason: 'Meeting' }),
+      makeInterruption({ id: '3', reason: 'Phone call' }),
+    ];
+    const result = groupInterruptionsByReason(interruptions, '(no reason)');
+    expect(result).toHaveLength(2);
+    const meeting = result.find(r => r.title === 'Meeting');
+    const phone = result.find(r => r.title === 'Phone call');
+    expect(meeting?.count).toBe(2);
+    expect(phone?.count).toBe(1);
+  });
+
+  it('groups empty-reason interruptions under the noReasonLabel', () => {
+    const interruptions = [
+      makeInterruption({ id: '1', reason: '' }),
+      makeInterruption({ id: '2', reason: '   ' }), // whitespace-only
+    ];
+    const result = groupInterruptionsByReason(interruptions, '(no reason)');
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe('(no reason)');
+    expect(result[0].count).toBe(2);
+  });
+
+  it('sorts results by count descending', () => {
+    const interruptions = [
+      makeInterruption({ id: '1', reason: 'Rare' }),
+      makeInterruption({ id: '2', reason: 'Common' }),
+      makeInterruption({ id: '3', reason: 'Common' }),
+      makeInterruption({ id: '4', reason: 'Common' }),
+      makeInterruption({ id: '5', reason: 'Rare' }),
+    ];
+    const result = groupInterruptionsByReason(interruptions, '(no reason)');
+    expect(result[0].title).toBe('Common');
+    expect(result[0].count).toBe(3);
+    expect(result[1].title).toBe('Rare');
+    expect(result[1].count).toBe(2);
+  });
+
+  it('handles a single interruption', () => {
+    const result = groupInterruptionsByReason([makeInterruption()], '(no reason)');
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe('Meeting');
+    expect(result[0].count).toBe(1);
+  });
+
+  it('trims whitespace from reasons before grouping', () => {
+    const interruptions = [
+      makeInterruption({ id: '1', reason: ' Meeting ' }),
+      makeInterruption({ id: '2', reason: 'Meeting' }),
+    ];
+    const result = groupInterruptionsByReason(interruptions, '(no reason)');
+    expect(result).toHaveLength(1);
+    expect(result[0].count).toBe(2);
   });
 });

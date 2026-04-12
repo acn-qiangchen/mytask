@@ -171,6 +171,8 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | RPT-6 | A **focus distribution pie chart** shows focus time broken down by task or ticket for the active date range filter (defaults to today when no filter is set). A **By Task / By Ticket** toggle switches the grouping. |
 | RPT-7 | In the pie chart, sessions with no linked task (or tasks with no ticket in ticket view) are grouped as "No Task" / "No Ticket".                          |
 | RPT-8 | If no focus session data exists, charts are replaced by a "No data yet" message.                                                                         |
+| RPT-17 | A **distraction distribution pie chart** is shown directly below the focus distribution chart. It groups interruptions by reason (for the active date range) and displays the count and percentage per reason. |
+| RPT-18 | If no interruptions exist in the selected date range, the distraction distribution chart shows a "No interruptions in this period" message.              |
 
 
 ### 5.3 Task History
