@@ -6,7 +6,7 @@ import {
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
 import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes, formatDateTime } from '../utils/formatters';
-import { filterTasksBySessionDates } from '../utils/reportFilters';
+import { filterTasksBySessionDates, groupInterruptionsByReason } from '../utils/reportFilters';
 
 export function ReportsPage() {
   const { state } = useApp();
@@ -106,6 +106,10 @@ export function ReportsPage() {
       })
       .sort((a, b) => b.pausedAt.localeCompare(a.pausedAt));
   }, [state.interruptions, fromDate, toDate]);
+
+  const distractionData = useMemo(() => {
+    return groupInterruptionsByReason(filteredInterruptions, t.reports.noReason);
+  }, [filteredInterruptions, t.reports.noReason]);
 
   const barData = barChartSpan === 'weekly' ? weeklyData : monthlyData;
   const xAxisFontSize = barChartSpan === 'monthly' ? 9 : 11;
@@ -207,6 +211,14 @@ export function ReportsPage() {
           onGroupByChange={setFocusGroupBy}
           byTaskLabel={t.reports.byTask}
           byTicketLabel={t.reports.byTicket}
+        />
+
+        {/* Distraction distribution (filtered by the same date range) */}
+        <DistractionDistributionChart
+          data={distractionData}
+          title={t.reports.distractionDistribution}
+          noDataLabel={t.reports.noDistractionData}
+          countLabel={t.reports.interruptionCount}
         />
 
         {/* Task history (filtered by the same date range) */}
@@ -376,6 +388,89 @@ function FocusDistributionChart({ data, title, noDataLabel, focusGroupBy, onGrou
                     {d.title}
                   </span>
                   <span className="text-gray-400 text-xs shrink-0">{d.minutes} min · {pct}%</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+interface DistractionEntry { title: string; count: number }
+
+const DISTRACTION_COLORS = [
+  '#f59e0b', '#f97316', '#ef4444', '#ec4899',
+  '#a855f7', '#3b82f6', '#06b6d4', '#22c55e',
+];
+
+function DistractionDistributionChart({ data, title, noDataLabel, countLabel }: {
+  data: DistractionEntry[];
+  title: string;
+  noDataLabel: string;
+  countLabel: (n: number) => string;
+}) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-5">
+      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{title}</h2>
+      {data.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-4">{noDataLabel}</p>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="count"
+                nameKey="title"
+                cx="50%"
+                cy="50%"
+                outerRadius={90}
+                innerRadius={40}
+                onClick={(_, index) => setActiveIndex(activeIndex === index ? null : index)}
+              >
+                {data.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={DISTRACTION_COLORS[i % DISTRACTION_COLORS.length]}
+                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
+                    stroke="transparent"
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
+                labelStyle={{ color: '#f3f4f6' }}
+                formatter={(value, _name, props) => {
+                  const n = Number(value);
+                  const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+                  return [`${countLabel(n)} (${pct}%)`, (props as { payload?: DistractionEntry }).payload?.title ?? ''];
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Legend */}
+          <div className="mt-2 space-y-1.5">
+            {data.map((d, i) => {
+              const pct = total > 0 ? Math.round((d.count / total) * 100) : 0;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setActiveIndex(activeIndex === i ? null : i)}
+                  className="w-full flex items-center gap-2 text-sm text-left"
+                >
+                  <span
+                    className="shrink-0 w-3 h-3 rounded-full"
+                    style={{ backgroundColor: DISTRACTION_COLORS[i % DISTRACTION_COLORS.length] }}
+                  />
+                  <span className={`flex-1 truncate ${activeIndex === null || activeIndex === i ? 'text-gray-200' : 'text-gray-500'}`}>
+                    {d.title}
+                  </span>
+                  <span className="text-gray-400 text-xs shrink-0">{countLabel(d.count)} · {pct}%</span>
                 </button>
               );
             })}
