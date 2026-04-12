@@ -13,7 +13,9 @@ npm run preview   # preview the production build locally
 
 Node version is pinned in `.nvmrc` (v20). The project uses `.claude/settings.local.json` (gitignored) to inject the correct `PATH` for the nvm-managed Node binary so Claude Code tools pick up the right version automatically.
 
-CI/CD: pushing to `main` triggers `.github/workflows/deploy.yml` → GitHub Pages at `https://acn-qiangchen.github.io/mytask/`.
+CI/CD: pushing to `main` triggers two workflows:
+- `.github/workflows/deploy.yml` → builds and deploys to GitHub Pages at `https://acn-qiangchen.github.io/mytask/`.
+- `.github/workflows/release.yml` → creates a GitHub release + tag for the current `package.json` version if one does not already exist.
 
 ## Architecture
 
@@ -77,6 +79,16 @@ Do not merge a feature PR without a corresponding `REQUIREMENTS.md` update.
 - Always work on a dedicated branch — never commit directly to `main` or `master`.
 - Branch names must include the GitHub issue number: `feature/issue-<N>-<short-description>` or `fix/issue-<N>-<short-description>`.
 - After pushing the branch, open a PR targeting `main`.
+
+## Release process
+
+A GitHub release tag is **required** for every release. The release workflow automates this:
+
+1. Bump `version` in `package.json` (e.g. `1.0.0` → `1.0.1`) as part of the feature/fix PR.
+2. Merge to `main` — `.github/workflows/release.yml` automatically creates the Git tag and GitHub release using the new version, with auto-generated release notes.
+3. A release is **not considered complete** until a GitHub release tag exists for that version.
+
+To distinguish multiple releases on the same day, increment the patch segment (`1.0.1`, `1.0.2`, …).
 
 ## UI / UX constraints
 
