@@ -6,6 +6,7 @@ import {
 import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
 import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes, formatDateTime } from '../utils/formatters';
+import { filterTasksBySessionDates } from '../utils/reportFilters';
 
 export function ReportsPage() {
   const { state } = useApp();
@@ -81,12 +82,8 @@ export function ReportsPage() {
   }, [state.tasks]);
 
   const filteredHistory = useMemo(() => {
-    return taskHistory.filter(task => {
-      if (fromDate && task.date < fromDate) return false;
-      if (toDate && task.date > toDate) return false;
-      return true;
-    });
-  }, [taskHistory, fromDate, toDate]);
+    return filterTasksBySessionDates(taskHistory, focusSessions, fromDate, toDate, today);
+  }, [taskHistory, focusSessions, fromDate, toDate, today]);
 
   const filteredInterruptions = useMemo(() => {
     return (state.interruptions ?? [])
