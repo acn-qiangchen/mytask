@@ -24,6 +24,7 @@ function makeState(tasks: Task[], updatedAt: string): AppState {
     tasks,
     sessions: [],
     interruptions: [],
+    tickets: [],
     settings: {
       focusDuration: 25,
       shortBreakDuration: 5,
