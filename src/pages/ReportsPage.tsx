@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -7,6 +7,9 @@ import { useApp } from '../hooks/useApp';
 import { useLang } from '../hooks/useLang';
 import { todayStr, getLast7Days, getLast30Days, shortDate, formatMinutes, formatDateTime } from '../utils/formatters';
 import { filterTasksBySessionDates, groupInterruptionsByReason } from '../utils/reportFilters';
+import { getCutoffDate, getArchiveYearsNeeded } from '../utils/archiveUtils';
+import type { ArchiveData } from '../utils/archiveUtils';
+import { loadArchiveYear } from '../utils/dynamoSync';
 
 export function ReportsPage() {
   const { state } = useApp();
@@ -16,8 +19,57 @@ export function ReportsPage() {
   const [barChartSpan, setBarChartSpan] = useState<'weekly' | 'monthly'>('weekly');
   const [focusGroupBy, setFocusGroupBy] = useState<'task' | 'ticket'>('task');
 
+  // Archive state: lazily loaded when fromDate extends beyond the 6-month cutoff
+  const [archiveData, setArchiveData] = useState<ArchiveData>({ tasks: [], sessions: [], interruptions: [] });
+  const [loadedYears, setLoadedYears] = useState<Set<string>>(new Set());
+  const [archiveLoading, setArchiveLoading] = useState(false);
+
+  useEffect(() => {
+    const cutoff = getCutoffDate();
+    const yearsNeeded = getArchiveYearsNeeded(fromDate, cutoff);
+    const yearsToLoad = yearsNeeded.filter(y => !loadedYears.has(y));
+    if (yearsToLoad.length === 0) return;
+
+    setArchiveLoading(true);
+    Promise.all(yearsToLoad.map(y => loadArchiveYear(y))).then(results => {
+      const merged: ArchiveData = { tasks: [], sessions: [], interruptions: [] };
+      for (const data of results) {
+        if (data) {
+          merged.tasks.push(...data.tasks);
+          merged.sessions.push(...data.sessions);
+          merged.interruptions.push(...data.interruptions);
+        }
+      }
+      setArchiveData(prev => ({
+        tasks: [...prev.tasks, ...merged.tasks],
+        sessions: [...prev.sessions, ...merged.sessions],
+        interruptions: [...prev.interruptions, ...merged.interruptions],
+      }));
+      setLoadedYears(prev => new Set([...prev, ...yearsToLoad]));
+      setArchiveLoading(false);
+    });
+  }, [fromDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const today = todayStr();
-  const focusSessions = state.sessions.filter(s => s.type === 'focus' && s.completed);
+
+  // Merge in-memory state with any loaded archive data (deduplicate by id)
+  const allSessions = useMemo(() => {
+    const ids = new Set(state.sessions.map(s => s.id));
+    return [...state.sessions, ...archiveData.sessions.filter(s => !ids.has(s.id))];
+  }, [state.sessions, archiveData.sessions]);
+
+  const allTasks = useMemo(() => {
+    const ids = new Set(state.tasks.map(t => t.id));
+    return [...state.tasks, ...archiveData.tasks.filter(t => !ids.has(t.id))];
+  }, [state.tasks, archiveData.tasks]);
+
+  const allInterruptions = useMemo(() => {
+    const existing = state.interruptions ?? [];
+    const ids = new Set(existing.map(i => i.id));
+    return [...existing, ...archiveData.interruptions.filter(i => !ids.has(i.id))];
+  }, [state.interruptions, archiveData.interruptions]);
+
+  const focusSessions = allSessions.filter(s => s.type === 'focus' && s.completed);
 
   const todayStats = useMemo(() => {
     const sessions = focusSessions.filter(s => s.date === today);
@@ -66,13 +118,13 @@ export function ReportsPage() {
       let key: string;
       let groupTitle: string;
       if (focusGroupBy === 'ticket') {
-        const task = s.taskId ? state.tasks.find(tsk => tsk.id === s.taskId) : null;
+        const task = s.taskId ? allTasks.find(tsk => tsk.id === s.taskId) : null;
         const ticket = task?.ticketId ? tickets.find(tk => tk.id === task.ticketId) : null;
         key = ticket?.id ?? '__none__';
         groupTitle = ticket ? `${ticket.number}${ticket.description ? ` — ${ticket.description}` : ''}` : t.reports.noTicket;
       } else {
         key = s.taskId ?? '__none__';
-        const task = s.taskId ? state.tasks.find(tsk => tsk.id === s.taskId) : null;
+        const task = s.taskId ? allTasks.find(tsk => tsk.id === s.taskId) : null;
         groupTitle = task?.title ?? t.reports.noTask;
       }
       if (!byGroup[key]) {
@@ -81,31 +133,31 @@ export function ReportsPage() {
       byGroup[key].minutes += s.duration;
     }
     return Object.entries(byGroup).map(([, v]) => v);
-  }, [focusSessions, state.tasks, state.tickets, today, fromDate, toDate, focusGroupBy, t.reports.noTask, t.reports.noTicket]);
+  }, [focusSessions, allTasks, state.tickets, today, fromDate, toDate, focusGroupBy, t.reports.noTask, t.reports.noTicket]);
 
   const taskHistory = useMemo(() => {
-    return state.tasks
+    return allTasks
       .filter(task => task.completed || task.archivedAt)
       .sort((a, b) => {
         const aTime = a.archivedAt ?? a.completedAt ?? a.createdAt;
         const bTime = b.archivedAt ?? b.completedAt ?? b.createdAt;
         return bTime.localeCompare(aTime);
       });
-  }, [state.tasks]);
+  }, [allTasks]);
 
   const filteredHistory = useMemo(() => {
     return filterTasksBySessionDates(taskHistory, focusSessions, fromDate, toDate, today);
   }, [taskHistory, focusSessions, fromDate, toDate, today]);
 
   const filteredInterruptions = useMemo(() => {
-    return (state.interruptions ?? [])
+    return allInterruptions
       .filter(i => {
         if (fromDate && i.date < fromDate) return false;
         if (toDate && i.date > toDate) return false;
         return true;
       })
       .sort((a, b) => b.pausedAt.localeCompare(a.pausedAt));
-  }, [state.interruptions, fromDate, toDate]);
+  }, [allInterruptions, fromDate, toDate]);
 
   const distractionData = useMemo(() => {
     return groupInterruptionsByReason(filteredInterruptions, t.reports.noReason);
@@ -177,28 +229,33 @@ export function ReportsPage() {
         )}
 
         {/* Date range filter — applies to Focus Distribution and Task History below */}
-        <div className="flex items-center gap-3 text-sm">
-          <label className="text-gray-400 shrink-0">{t.reports.from}</label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={e => setFromDate(e.target.value)}
-            className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
-          />
-          <label className="text-gray-400 shrink-0">{t.reports.to}</label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={e => setToDate(e.target.value)}
-            className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
-          />
-          {(fromDate || toDate) && (
-            <button
-              onClick={() => { setFromDate(''); setToDate(''); }}
-              className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
-            >
-              ✕
-            </button>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 text-sm">
+            <label className="text-gray-400 shrink-0">{t.reports.from}</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={e => setFromDate(e.target.value)}
+              className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
+            />
+            <label className="text-gray-400 shrink-0">{t.reports.to}</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={e => setToDate(e.target.value)}
+              className="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:outline-none focus:border-gray-400"
+            />
+            {(fromDate || toDate) && (
+              <button
+                onClick={() => { setFromDate(''); setToDate(''); }}
+                className="text-gray-500 hover:text-gray-300 text-xs transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {archiveLoading && (
+            <p className="text-xs text-gray-500 animate-pulse">{t.reports.loadingHistory}</p>
           )}
         </div>
 
@@ -263,7 +320,7 @@ export function ReportsPage() {
             <div className="space-y-3">
               {filteredInterruptions.map(interruption => {
                 const task = interruption.taskId
-                  ? state.tasks.find(tsk => tsk.id === interruption.taskId)
+                  ? allTasks.find(tsk => tsk.id === interruption.taskId)
                   : null;
                 return (
                   <div key={interruption.id} className="border-l-2 border-yellow-500/40 pl-3 space-y-1">

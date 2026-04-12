@@ -7,6 +7,16 @@ Format: `## [version] - YYYY-MM-DD` followed by categorised change bullets.
 
 ---
 
+## [1.0.3] - 2026-04-12
+
+### Added
+- DynamoDB data archiving to prevent STATE item from exceeding 400 KB (closes #35).
+  - On each save, tasks/sessions/interruptions older than 6 months are written to yearly `SK="ARCHIVE#YYYY"` items and pruned from `SK="STATE"`, keeping the active item lean.
+  - Existing data migrates automatically on the first normal save — no manual migration needed.
+  - Reports page lazy-loads archive years when the selected date range extends beyond the 6-month cutoff; a loading indicator is shown while fetching.
+
+---
+
 ## [1.0.2] - 2026-04-12
 
 ### Added
