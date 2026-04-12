@@ -106,6 +106,7 @@ const en = {
     distractionDistribution: 'Distraction Distribution',
     noDistractionData: 'No interruptions in this period.',
     interruptionCount: (n: number) => `${n}×`,
+    loadingHistory: 'Loading historical data…',
   },
   settings: {
     title: 'Settings',
@@ -246,6 +247,7 @@ const ja: typeof en = {
     distractionDistribution: '中断分布',
     noDistractionData: 'この期間の中断はありません。',
     interruptionCount: (n: number) => `${n}×`,
+    loadingHistory: '過去データを読み込み中…',
   },
   settings: {
     title: '設定',
