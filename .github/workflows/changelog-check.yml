@@ -1,0 +1,48 @@
+name: Changelog Check
+
+# Enforces that CHANGELOG.md is updated whenever package.json version is bumped.
+# Runs on every pull request targeting main.
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  changelog:
+    name: Require CHANGELOG.md update on version bump
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed to read the base branch file
+
+      - name: Compare versions and check changelog
+        run: |
+          BASE_VERSION=$(git show "origin/${{ github.base_ref }}":package.json | jq -r '.version')
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+
+          echo "Base version  : $BASE_VERSION"
+          echo "Branch version: $CURRENT_VERSION"
+
+          if [ "$BASE_VERSION" = "$CURRENT_VERSION" ]; then
+            echo "✅ Version unchanged ($CURRENT_VERSION) — no changelog entry required."
+            exit 0
+          fi
+
+          echo "Version bumped: $BASE_VERSION → $CURRENT_VERSION"
+
+          CHANGELOG_CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep -c "^CHANGELOG\.md$" || true)
+
+          if [ "$CHANGELOG_CHANGED" -eq 0 ]; then
+            echo ""
+            echo "❌ CHANGELOG.md was not updated."
+            echo ""
+            echo "The version was bumped from $BASE_VERSION to $CURRENT_VERSION, so a"
+            echo "CHANGELOG.md entry is required. Add a section like:"
+            echo ""
+            echo "  ## [$CURRENT_VERSION] - $(date -u +%Y-%m-%d)"
+            echo "  ### Added / Fixed / Changed"
+            echo "  - Describe what changed in this release."
+            exit 1
+          fi
+
+          echo "✅ CHANGELOG.md was updated for v$CURRENT_VERSION."

@@ -7,6 +7,14 @@ Format: `## [version] - YYYY-MM-DD` followed by categorised change bullets.
 
 ---
 
+## [1.0.2] - 2026-04-12
+
+### Added
+- CI check workflow (`.github/workflows/changelog-check.yml`) — blocks PR merges when the version is bumped but `CHANGELOG.md` is not updated (closes #46).
+- Updated `CLAUDE.md` release process to document the changelog requirement.
+
+---
+
 ## [1.0.1] - 2026-04-12
 
 ### Added
