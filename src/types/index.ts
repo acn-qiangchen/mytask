@@ -56,4 +56,5 @@ export interface AppState {
   settings: Settings;
   selectedDate: string; // YYYY-MM-DD
   updatedAt?: string;   // ISO timestamp — set on every local mutation; used for merge conflict resolution
+  deletedTaskIds?: string[]; // tombstone: IDs of tasks explicitly deleted; prevents resurrection during cross-device merge
 }

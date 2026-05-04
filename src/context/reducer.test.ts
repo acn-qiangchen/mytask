@@ -34,6 +34,33 @@ function makeState(tasks: Task[]): AppState {
   };
 }
 
+describe('DELETE_TASK', () => {
+  it('removes the task from the tasks array', () => {
+    const state = makeState([makeTask({ id: 'a' }), makeTask({ id: 'b' })]);
+    const next = appReducer(state, { type: 'DELETE_TASK', payload: 'a' });
+    expect(next.tasks.find(t => t.id === 'a')).toBeUndefined();
+    expect(next.tasks.find(t => t.id === 'b')).toBeDefined();
+  });
+
+  it('adds the deleted id to deletedTaskIds tombstone', () => {
+    const state = makeState([makeTask({ id: 'a' })]);
+    const next = appReducer(state, { type: 'DELETE_TASK', payload: 'a' });
+    expect(next.deletedTaskIds).toContain('a');
+  });
+
+  it('appends to an existing deletedTaskIds list', () => {
+    const state = { ...makeState([makeTask({ id: 'b' })]), deletedTaskIds: ['x'] };
+    const next = appReducer(state, { type: 'DELETE_TASK', payload: 'b' });
+    expect(next.deletedTaskIds).toEqual(['x', 'b']);
+  });
+
+  it('sets updatedAt', () => {
+    const state = makeState([makeTask({ id: 'a' })]);
+    const next = appReducer(state, { type: 'DELETE_TASK', payload: 'a' });
+    expect(next.updatedAt).toBeDefined();
+  });
+});
+
 describe('REORDER_TASKS', () => {
   it('assigns order values matching the position in the payload array', () => {
     const tasks = [

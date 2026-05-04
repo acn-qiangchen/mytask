@@ -19,7 +19,7 @@ function makeTask(id: string): Task {
   };
 }
 
-function makeState(tasks: Task[], updatedAt: string): AppState {
+function makeState(tasks: Task[], updatedAt: string, deletedTaskIds?: string[]): AppState {
   return {
     tasks,
     sessions: [],
@@ -36,6 +36,7 @@ function makeState(tasks: Task[], updatedAt: string): AppState {
     },
     selectedDate: '2026-01-01',
     updatedAt,
+    deletedTaskIds: deletedTaskIds ?? [],
   };
 }
 
@@ -103,5 +104,45 @@ describe('mergeStates', () => {
     const remote = makeState([task], '2026-01-01T00:00:00.000Z');
     const merged = mergeStates(local, remote);
     expect(merged.tasks.filter(t => t.id === 'shared')).toHaveLength(1);
+  });
+
+  it('does not resurrect a task deleted on the primary (newer) side', () => {
+    // Device B deleted task X (newer) — device A still has it (older).
+    // After merge, X must remain deleted.
+    const deviceA = makeState([makeTask('x'), makeTask('y')], '2026-01-01T10:00:00.000Z');
+    const deviceB = makeState([makeTask('y')], '2026-01-02T10:00:00.000Z', ['x']);
+    const merged = mergeStates(deviceA, deviceB);
+    expect(merged.tasks.find(t => t.id === 'x')).toBeUndefined();
+    expect(merged.tasks.find(t => t.id === 'y')).toBeDefined();
+  });
+
+  it('does not resurrect a task deleted on the secondary (older) side', () => {
+    // Device A deleted task X (older) — device B added a new task W (newer).
+    // X was in device B at the time; after merge, X must remain deleted.
+    const deviceA = makeState([makeTask('y')], '2026-01-01T10:00:00.000Z', ['x']);
+    const deviceB = makeState([makeTask('x'), makeTask('y'), makeTask('w')], '2026-01-02T10:00:00.000Z');
+    const merged = mergeStates(deviceA, deviceB);
+    expect(merged.tasks.find(t => t.id === 'x')).toBeUndefined();
+    expect(merged.tasks.find(t => t.id === 'y')).toBeDefined();
+    expect(merged.tasks.find(t => t.id === 'w')).toBeDefined();
+  });
+
+  it('propagates the union of deletedTaskIds into the merged state', () => {
+    const deviceA = makeState([makeTask('y')], '2026-01-02T10:00:00.000Z', ['a1', 'a2']);
+    const deviceB = makeState([makeTask('y')], '2026-01-01T10:00:00.000Z', ['b1']);
+    const merged = mergeStates(deviceA, deviceB);
+    expect(merged.deletedTaskIds).toEqual(expect.arrayContaining(['a1', 'a2', 'b1']));
+    expect(merged.deletedTaskIds).toHaveLength(3);
+  });
+
+  it('handles states without deletedTaskIds (backward compat)', () => {
+    const older = makeState([makeTask('x'), makeTask('y')], '2026-01-01T00:00:00.000Z');
+    const newer = makeState([makeTask('y'), makeTask('z')], '2026-01-02T00:00:00.000Z');
+    // Neither side has deletedTaskIds — should still union-merge without crashing
+    delete (older as AppState & { deletedTaskIds?: string[] }).deletedTaskIds;
+    delete (newer as AppState & { deletedTaskIds?: string[] }).deletedTaskIds;
+    const merged = mergeStates(older, newer);
+    const ids = merged.tasks.map(t => t.id).sort();
+    expect(ids).toEqual(['x', 'y', 'z']);
   });
 });

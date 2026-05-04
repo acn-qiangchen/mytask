@@ -7,6 +7,15 @@ Format: `## [version] - YYYY-MM-DD` followed by categorised change bullets.
 
 ---
 
+## [1.0.4] - 2026-05-04
+
+### Fixed
+- Task deletions now sync correctly across devices (closes #51).
+  - Deleting a task on one device no longer causes it to reappear on other devices after sync.
+  - A `deletedTaskIds` tombstone list is recorded on each deletion and respected by the cross-device merge, so deleted tasks are never resurrected.
+
+---
+
 ## [1.0.3] - 2026-04-12
 
 ### Added

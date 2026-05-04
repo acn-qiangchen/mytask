@@ -32,7 +32,12 @@ export function appReducer(state: AppState, action: Action): AppState {
       };
 
     case 'DELETE_TASK':
-      return { ...state, tasks: state.tasks.filter(t => t.id !== action.payload), updatedAt: new Date().toISOString() };
+      return {
+        ...state,
+        tasks: state.tasks.filter(t => t.id !== action.payload),
+        deletedTaskIds: [...(state.deletedTaskIds ?? []), action.payload],
+        updatedAt: new Date().toISOString(),
+      };
 
     case 'CLEAR_COMPLETED_TASKS':
       return {
