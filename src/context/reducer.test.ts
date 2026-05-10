@@ -112,6 +112,63 @@ describe('REORDER_TASKS', () => {
   });
 });
 
+describe('CLEAR_COMPLETED_TASKS', () => {
+  it('archives a task completed on the given date', () => {
+    const task = makeTask({ id: 'a', completed: true, completedAt: '2026-05-10T10:00:00.000Z' });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.tasks.find(t => t.id === 'a')?.archivedAt).toBeDefined();
+  });
+
+  it('archives a task created on a past day but completed today (regression for #53)', () => {
+    const task = makeTask({
+      id: 'a',
+      date: '2026-05-08',
+      completed: true,
+      completedAt: '2026-05-10T10:00:00.000Z',
+    });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.tasks.find(t => t.id === 'a')?.archivedAt).toBeDefined();
+  });
+
+  it('does not archive a task completed on a different day', () => {
+    const task = makeTask({ id: 'a', completed: true, completedAt: '2026-05-09T10:00:00.000Z' });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.tasks.find(t => t.id === 'a')?.archivedAt).toBeUndefined();
+  });
+
+  it('does not archive incomplete tasks', () => {
+    const task = makeTask({ id: 'a', date: '2026-05-10', completed: false });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.tasks.find(t => t.id === 'a')?.archivedAt).toBeUndefined();
+  });
+
+  it('does not re-archive an already archived task', () => {
+    const archivedAt = '2026-05-10T08:00:00.000Z';
+    const task = makeTask({ id: 'a', completed: true, completedAt: '2026-05-10T09:00:00.000Z', archivedAt });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.tasks.find(t => t.id === 'a')?.archivedAt).toBe(archivedAt);
+  });
+
+  it('falls back to task date when completedAt is missing', () => {
+    const task = makeTask({ id: 'a', date: '2026-05-10', completed: true });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.tasks.find(t => t.id === 'a')?.archivedAt).toBeDefined();
+  });
+
+  it('sets updatedAt', () => {
+    const task = makeTask({ id: 'a', completed: true, completedAt: '2026-05-10T10:00:00.000Z' });
+    const state = makeState([task]);
+    const next = appReducer(state, { type: 'CLEAR_COMPLETED_TASKS', payload: '2026-05-10' });
+    expect(next.updatedAt).toBeDefined();
+  });
+});
+
 describe('ADD_INTERRUPTION', () => {
   function makeInterruption(overrides: Partial<Interruption> = {}): Interruption {
     return {
