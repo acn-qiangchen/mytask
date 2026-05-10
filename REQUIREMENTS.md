@@ -95,7 +95,7 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 
 | ID     | Requirement                                                                                                                                                                  |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TSK-1  | The timer page shows all **pending (not completed, not archived)** tasks regardless of their date, plus today's completed tasks.                                             |
+| TSK-1  | The timer page shows all **pending (not completed, not archived)** tasks regardless of their date, plus tasks completed today (determined by `completedAt` date, not the task's creation date). |
 | TSK-2  | Pending tasks are shown above completed tasks.                                                                                                                               |
 | TSK-3  | Pending tasks are sorted by their `order` value (drag-and-drop order), then by `createdAt` for tasks without an order. Delayed tasks share the same ordering as today's tasks. |
 | TSK-4  | Completed tasks are sorted by `completedAt` descending (most recently completed first).                                                                                      |
@@ -134,7 +134,7 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 | TSK-14 | Marking a completed task as incomplete sets `completed=false` and clears `completedAt`.                                                                                   |
 | TSK-15 | The user can delete a task via a delete icon. A confirmation dialog is shown before deletion.                                                                             |
 | TSK-16 | A "Clear completed" button appears when at least one task for today is complete.                                                                                          |
-| TSK-17 | "Clear completed" sets `archivedAt` on all completed tasks for today, hiding them from the timer page. Archived tasks remain visible in task history on the Reports page. |
+| TSK-17 | "Clear completed" sets `archivedAt` on all completed tasks whose `completedAt` date is today (regardless of creation date), hiding them from the timer page. Archived tasks remain visible in task history on the Reports page. |
 
 
 ### 4.5 Reordering Tasks

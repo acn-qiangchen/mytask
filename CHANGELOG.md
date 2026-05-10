@@ -7,6 +7,15 @@ Format: `## [version] - YYYY-MM-DD` followed by categorised change bullets.
 
 ---
 
+## [1.0.5] - 2026-05-10
+
+### Fixed
+- Completed tasks created on a previous day now remain visible on the timer page when completed today (closes #53).
+  - Previously, marking an older task complete caused it to immediately disappear because the filter compared the task's creation date instead of its completion date.
+  - The completed-tasks filter and "Clear completed" action now use `completedAt` date rather than the task's `date` field.
+
+---
+
 ## [1.0.4] - 2026-05-04
 
 ### Fixed

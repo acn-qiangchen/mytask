@@ -42,11 +42,11 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'CLEAR_COMPLETED_TASKS':
       return {
         ...state,
-        tasks: state.tasks.map(t =>
-          t.date === action.payload && t.completed && !t.archivedAt
-            ? { ...t, archivedAt: new Date().toISOString() }
-            : t
-        ),
+        tasks: state.tasks.map(t => {
+          if (!t.completed || t.archivedAt) return t;
+          const completionDate = t.completedAt ? t.completedAt.slice(0, 10) : t.date;
+          return completionDate === action.payload ? { ...t, archivedAt: new Date().toISOString() } : t;
+        }),
         updatedAt: new Date().toISOString(),
       };
 

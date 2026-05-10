@@ -79,7 +79,11 @@ export function TimerPage() {
       return ao !== bo ? ao - bo : a.createdAt.localeCompare(b.createdAt);
     });
   const completedTasks = state.tasks
-    .filter(t => t.completed && t.date === today && !t.archivedAt)
+    .filter(t => {
+      if (!t.completed || t.archivedAt) return false;
+      const completionDate = t.completedAt ? t.completedAt.slice(0, 10) : t.date;
+      return completionDate === today;
+    })
     .sort((a, b) => (a.completedAt ?? '').localeCompare(b.completedAt ?? ''));
   const todayTasks = [...pendingTasks, ...completedTasks];
   const hasCompleted = completedTasks.length > 0;
