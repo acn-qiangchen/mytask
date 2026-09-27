@@ -274,3 +274,38 @@ describe('Ticket actions', () => {
     expect(next.updatedAt).toBeDefined();
   });
 });
+
+describe('UPDATE_TASK', () => {
+  it('replaces the matching task with the updated payload', () => {
+    const original = makeTask({ id: 'task-1', title: 'Original', estimatedPomodoros: 2, completedPomodoros: 1 });
+    const state = makeState([original]);
+    const updated = { ...original, title: 'Updated', estimatedPomodoros: 3, completedPomodoros: 2 };
+    const next = appReducer(state, { type: 'UPDATE_TASK', payload: updated });
+    const result = next.tasks.find(t => t.id === 'task-1');
+    expect(result?.title).toBe('Updated');
+    expect(result?.estimatedPomodoros).toBe(3);
+    expect(result?.completedPomodoros).toBe(2);
+  });
+
+  it('allows setting completedPomodoros to 0', () => {
+    const original = makeTask({ id: 'task-1', completedPomodoros: 5 });
+    const state = makeState([original]);
+    const next = appReducer(state, { type: 'UPDATE_TASK', payload: { ...original, completedPomodoros: 0 } });
+    expect(next.tasks.find(t => t.id === 'task-1')?.completedPomodoros).toBe(0);
+  });
+
+  it('does not affect other tasks', () => {
+    const t1 = makeTask({ id: 'task-1', title: 'First' });
+    const t2 = makeTask({ id: 'task-2', title: 'Second' });
+    const state = makeState([t1, t2]);
+    const next = appReducer(state, { type: 'UPDATE_TASK', payload: { ...t1, title: 'Changed' } });
+    expect(next.tasks.find(t => t.id === 'task-2')?.title).toBe('Second');
+  });
+
+  it('sets updatedAt', () => {
+    const original = makeTask({ id: 'task-1' });
+    const state = makeState([original]);
+    const next = appReducer(state, { type: 'UPDATE_TASK', payload: original });
+    expect(next.updatedAt).toBeDefined();
+  });
+});
