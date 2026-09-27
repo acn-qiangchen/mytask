@@ -121,8 +121,9 @@ All date values (task date, session date, "today" comparisons, weekly/monthly ch
 
 | ID     | Requirement                                                           |
 | ------ | --------------------------------------------------------------------- |
-| TSK-11 | The user can edit a task's title and estimated pomodoro count inline. |
+| TSK-11 | The user can edit a task's title, estimated pomodoro count, and actual pomodoro count inline. |
 | TSK-12 | The estimated pomodoro count can be adjusted between 1 and 20.        |
+| TSK-18 | The user can manually edit the actual (completed) pomodoro count for a task. The value can be set between 0 and 99. |
 
 
 ### 4.4 Completing & Deleting Tasks

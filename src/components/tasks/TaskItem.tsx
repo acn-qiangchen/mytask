@@ -22,6 +22,7 @@ export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHand
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editPomodoros, setEditPomodoros] = useState(task.estimatedPomodoros);
+  const [editActualPomodoros, setEditActualPomodoros] = useState(task.completedPomodoros);
   const [editTicketId, setEditTicketId] = useState(task.ticketId ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -29,7 +30,7 @@ export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHand
 
   function saveEdit() {
     if (!editTitle.trim()) return;
-    updateTask({ ...task, title: editTitle.trim(), estimatedPomodoros: editPomodoros, ticketId: editTicketId || undefined });
+    updateTask({ ...task, title: editTitle.trim(), estimatedPomodoros: editPomodoros, completedPomodoros: editActualPomodoros, ticketId: editTicketId || undefined });
     setEditing(false);
   }
 
@@ -68,6 +69,12 @@ export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHand
           <button onClick={() => setEditPomodoros(p => Math.max(1, p - 1))} className="w-6 h-6 rounded bg-white/10 text-white text-xs hover:bg-white/20">−</button>
           <span className="text-white text-sm w-4 text-center">{editPomodoros}</span>
           <button onClick={() => setEditPomodoros(p => Math.min(20, p + 1))} className="w-6 h-6 rounded bg-white/10 text-white text-xs hover:bg-white/20">+</button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-white/60 text-xs">{t.tasks.labelActualPomodoros}:</span>
+          <button onClick={() => setEditActualPomodoros(p => Math.max(0, p - 1))} className="w-6 h-6 rounded bg-white/10 text-white text-xs hover:bg-white/20">−</button>
+          <span className="text-white text-sm w-4 text-center">{editActualPomodoros}</span>
+          <button onClick={() => setEditActualPomodoros(p => Math.min(99, p + 1))} className="w-6 h-6 rounded bg-white/10 text-white text-xs hover:bg-white/20">+</button>
         </div>
         {tickets.length > 0 ? (
           <select
@@ -157,7 +164,7 @@ export function TaskItem({ task, isActive, isDelayed = false, onSelect, dragHand
 
       <div className="flex gap-1">
         <button
-          onClick={e => { e.stopPropagation(); setEditing(true); setEditTitle(task.title); setEditPomodoros(task.estimatedPomodoros); }}
+          onClick={e => { e.stopPropagation(); setEditing(true); setEditTitle(task.title); setEditPomodoros(task.estimatedPomodoros); setEditActualPomodoros(task.completedPomodoros); }}
           className="p-1 text-white/40 hover:text-white rounded"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -7,6 +7,15 @@ Format: `## [version] - YYYY-MM-DD` followed by categorised change bullets.
 
 ---
 
+## [1.0.6] - 2026-09-28
+
+### Added
+- Task edit form now includes an **Act. Pomodoros** field, allowing users to manually correct the actual (completed) pomodoro count for a task (closes #55).
+  - Previously, the actual count was only auto-incremented by the timer and could not be adjusted if, for example, the timer ran unattended.
+  - The field allows values from 0 to 99 and is pre-filled with the current actual count when editing.
+
+---
+
 ## [1.0.5] - 2026-05-10
 
 ### Fixed
